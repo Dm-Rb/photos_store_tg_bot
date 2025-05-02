@@ -13,6 +13,8 @@ class DataBase:
         self.db_path.parent.mkdir(exist_ok=True)  # Создаёт папки, если их нет
         self.db_path.touch(exist_ok=True)  # Создаёт файл, если его нет
         self.__create_table__users()
+        self.__create_table__dumps()
+        self.__create_table__photos()
 
     def __create_table__users(self):
         """
@@ -27,6 +29,32 @@ class DataBase:
                 CREATE TABLE IF NOT EXISTS users (
                     user_id INTEGER UNIQUE NOT NULL,
                     user_permission INTEGER DEFAULT 1
+                )
+                '''
+            )
+            conn.commit()
+
+    def __create_table__dumps(self):
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute(
+                f'''
+                CREATE TABLE IF NOT EXISTS dumps (
+                    id INTEGER PRIMARY KEY,
+                    title TEXT NOT NULL,
+                    description TEXT
+                )
+                '''
+            )
+            conn.commit()
+
+    def __create_table__photos(self):
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute(
+                f'''
+                CREATE TABLE IF NOT EXISTS photos (
+                    photo_name TEXT NOT NULL,
+                    telegram_file_id INTEGER,
+                    dump_id INTEGER
                 )
                 '''
             )
@@ -67,5 +95,42 @@ class Users(DataBase):
             return dict({})
 
 
-users_db = Users()
+class Dumps(DataBase):
+    """
+    Класс представляет из себя название группы фотографий
+    """
+    def __init__(self, db_path="data.db"):
+        super().__init__(db_path)  # Вызов родительского __init__
+        self.cache = None
 
+    def insert(self, title: str, description: str = 1):
+        if len(title) >= 62:
+            title = title[:62]
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute(
+                'INSERT INTO dumps (title, description) VALUES(?, ?)',
+                (title, description,)
+            )
+        return
+
+
+class Photos(DataBase):
+    def __init__(self, db_path="data.db"):
+        super().__init__(db_path)  # Вызов родительского __init__
+        self.cache = None
+
+
+    def insert(self, title: str, description: str = 1):
+        if len(title) >= 62:
+            title = title[:62]
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute(
+                'INSERT INTO photos (photo_name, telegram_file_id, dump_id) VALUES(?, ?, ?)',
+                (title, description,)
+            )
+        return
+
+
+
+users_db = Users()
+dumps_db = Dumps()
