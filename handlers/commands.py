@@ -6,13 +6,13 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 from aiogram.filters import Command
 from text.messages import messages_cmd_start
-
+import os
 
 router = Router()
 users_db.init()  # Инициализируем экземпляр класса
 PASSPHRASE = config.PASSPHRASE
 MAX_ATTEMPTS_PASSPHRASE = 5  # Максимальное количество попыток ввода пароля, после которого выписывается бан
-
+PHOTOS_DIR = 'photos'
 
 @router.message(Command("cancel"))
 # --- Команда /cancel (сброс FSM вручную) ---
@@ -80,37 +80,98 @@ async def process_password(message: Message, state: FSMContext):
 
 # --- START END ---
 
-# --- CREATE ---
-class CreateDump(StatesGroup):
+# --- CREATE_NEW ---
+class PhotoDump(StatesGroup):
     waiting_for_title = State()  # Ожидаем title
     waiting_for_description = State()  # Ожидаем description
+    waiting_for_photos = State()  # Ожидаем файлы
 
 
-@router.message(Command("create"))
-async def cmd_start(message: Message, state: FSMContext):
-    await message.answer("Укажите название события (не более 62 символов)\n/cancel - отменить создание нового дампа")
-    await state.set_state(CreateDump.waiting_for_title)
-
-
-@router.message(CreateDump.waiting_for_title)
-async def process_title(message: Message, state: FSMContext):
-    # --- Обработка title ---
-    await state.update_data(title=message.text)  # Сохраняем title
-    await message.answer("Добавьте описание")
-    await state.set_state(CreateDump.waiting_for_description)
-
-
-@router.message(CreateDump.waiting_for_description)
-async def process_description(message: Message, state: FSMContext):
-    # --- Обработка description ---
-    data = await state.get_data()  # Получаем сохранённые данные
-    title = data.get("title")
-    description = message.text
-
+@router.message(Command("create_new"))
+async def cmd_photos(message: Message, state: FSMContext):
     await message.answer(
-        f"✅ Данные сохранены!\n {title} {description}"
+        "Укажите название для набора фотографий (не более 62 символов)\n"
+        "/cancel - отменить создание"
     )
-    await state.clear()  # Сбрасываем FSM
+    await state.set_state(PhotoDump.waiting_for_title)
+
+
+@router.message(PhotoDump.waiting_for_title)
+async def process_title(message: Message, state: FSMContext):
+    if len(message.text) > 62:
+        await message.answer("Название слишком длинное. Максимум 62 символа. Попробуйте еще раз")
+        return
+
+    await state.update_data(title=message.text)
+    await message.answer("Теперь добавьте описание")
+    await state.set_state(PhotoDump.waiting_for_description)
+
+
+@router.message(PhotoDump.waiting_for_description)
+async def process_description(message: Message, state: FSMContext):
+    await state.update_data(description=message.text)
+    await message.answer(
+        "Теперь загрузите фотографии (одну или несколько).\n"
+        "Когда закончите, введите команду /save для сохранения"
+    )
+    await state.set_state(PhotoDump.waiting_for_photos)
+    # Инициализируем список для хранения информации о фото
+    await state.update_data(photos=[], file_names=[])
+
+
+@router.message(PhotoDump.waiting_for_photos, Command("save"))
+async def save_record(message: Message, state: FSMContext):
+    data = await state.get_data()
+    title = data.get("title", "Без названия")
+    description = data.get("description", "Без описания")
+    photos = data.get("photos", [])
+    file_names = data.get("file_names", [])
+    print(photos)
+    print(file_names)
+    # if photos and file_names:
+    #     items = []
+    #     for p, f in zip(photos, file_names):
+    #         items.append(
+    #             ''
+    #         )
+
+    result_message = {"title": title,
+                      'description': description,
+                      'photos': []
+                      }
+
+
+    await message.answer("Готово")
+    await state.clear()
+
+
+@router.message(PhotoDump.waiting_for_photos, F.photo)
+async def handle_photos(message: Message, state: FSMContext):
+    # Получаем фото с самым высоким разрешением
+    photo = message.photo[-1]
+
+    # Создаем уникальное имя файла
+    file_name = f"photo_{message.from_user.id}_{photo.file_unique_id}.jpg"
+    file_path = os.path.join(PHOTOS_DIR, file_name)
+
+    # Скачиваем фото
+    file = await message.bot.get_file(photo.file_id)
+    await message.bot.download_file(file.file_path, file_path)
+
+    # Обновляем данные в состоянии
+    data = await state.get_data()
+    photos = data.get("photos", [])
+    file_names = data.get("file_names", [])
+
+    photos.append(photo.file_id)
+    file_names.append(file_name)
+
+    await state.update_data(photos=photos, file_names=file_names)
+
+@router.message(PhotoDump.waiting_for_photos)
+async def wrong_input_in_photos_state(message: Message):
+    await message.answer("Пожалуйста, загружайте только фотографии. Когда закончите, введите /save")
 
 # --- CREATE END---
+
 
