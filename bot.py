@@ -2,7 +2,7 @@ from config_file import config
 import asyncio
 from aiogram import Bot, Dispatcher
 from aiogram.types import BotCommand
-from handlers import commands
+from handlers import cmd_start, cmd_create
 from middlewares.ban import BanMiddleware  # Импортируем наш middleware
 
 
@@ -12,7 +12,8 @@ async def main():
     # ---
 
     # подключаем роутеры к диспетчеру
-    dp.include_router(commands.router)
+    dp.include_router(cmd_start.router)
+    dp.include_router(cmd_create.router)
     dp.update.middleware(BanMiddleware())  # Будет применяться ко всем событиям
     # Устанавливаем команды бота
     await bot.set_my_commands([
