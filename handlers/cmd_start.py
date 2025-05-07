@@ -9,7 +9,6 @@ from text.messages import messages_cmd_start
 
 
 router = Router()
-users_db.init()  # Инициализируем экземпляр класса
 PASSPHRASE = config.PASSPHRASE
 MAX_ATTEMPTS_PASSPHRASE = 5  # Максимальное количество попыток ввода пароля, после которого выписывается бан
 
