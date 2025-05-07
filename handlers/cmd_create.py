@@ -4,10 +4,11 @@ from services.database import users_db
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 from aiogram.filters import Command
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 import os
 from pathlib import Path
+from services.database import dumps_db, files_db
 
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 router = Router()
 users_db.init()  # Инициализируем экземпляр класса
 PHOTOS_DIR = 'temp'
@@ -74,8 +75,7 @@ async def process_description(message: Message, state: FSMContext):
 
 
 @router.message(PhotoDump.waiting_for_photos, Command("save"))
-async def save_record(message: Message, state: FSMContext):
-
+async def save_dump(message: Message, state: FSMContext):
     data = await state.get_data()
     title = data.get("title", "Без названия")
     description = data.get("description", "Без описания")
@@ -89,9 +89,11 @@ async def save_record(message: Message, state: FSMContext):
         return
     result_message = {"title": title,
                       'description': description,
-                      'photos': []
+                      'photos': [{'telegram_file_id': file_id, 'file_name': file_name} for file_id,file_name in zip(photos, file_names)]
                       }
-
+    dump_id = dumps_db.insert(result_message['title'], result_message['description'])
+    for photo_item in result_message['photos']:
+        files_db.insert(photo_item['file_name'], photo_item['telegram_file_id'], dump_id)
     await message.answer("Готово", reply_markup=ReplyKeyboardRemove())
     await state.clear()
 
@@ -113,6 +115,7 @@ async def handle_photos(message: Message, state: FSMContext):
     data = await state.get_data()
     photos = data.get("photos", [])
     file_names = data.get("file_names", [])
+
 
     photos.append(photo.file_id)
     file_names.append(file_name)

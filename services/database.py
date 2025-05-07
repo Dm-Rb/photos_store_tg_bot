@@ -52,7 +52,7 @@ class DataBase:
             conn.execute(
                 f'''
                 CREATE TABLE IF NOT EXISTS photos (
-                    photo_name TEXT NOT NULL,
+                    photo_name TEXT NOT NULL,                    
                     telegram_file_id INTEGER,
                     dump_id INTEGER
                 )
@@ -95,7 +95,7 @@ class Users(DataBase):
             return dict({})
 
 
-class Dumps(DataBase):
+class PhotoDumps(DataBase):
     """
     Класс представляет из себя название группы фотографий
     """
@@ -107,30 +107,27 @@ class Dumps(DataBase):
         if len(title) >= 62:
             title = title[:62]
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute(
+            cursor = conn.execute(
                 'INSERT INTO dumps (title, description) VALUES(?, ?)',
                 (title, description,)
             )
-        return
+            last_id = cursor.lastrowid
+        return last_id
 
 
-class Photos(DataBase):
+class PhotoFiles(DataBase):
     def __init__(self, db_path="data.db"):
         super().__init__(db_path)  # Вызов родительского __init__
         self.cache = None
 
-
-    def insert(self, title: str, description: str = 1):
-        if len(title) >= 62:
-            title = title[:62]
+    def insert(self, photo_name, telegram_file_id, dump_id):
         with sqlite3.connect(self.db_path) as conn:
             conn.execute(
                 'INSERT INTO photos (photo_name, telegram_file_id, dump_id) VALUES(?, ?, ?)',
-                (title, description,)
+                (photo_name, telegram_file_id, dump_id, )
             )
-        return
-
 
 
 users_db = Users()
-dumps_db = Dumps()
+dumps_db = PhotoDumps()
+files_db = PhotoFiles()
