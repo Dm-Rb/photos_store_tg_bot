@@ -62,7 +62,7 @@ async def process_description(message: Message, state: FSMContext):
     kb = ReplyKeyboardMarkup(
         keyboard=[
             [
-                KeyboardButton(text="/save"),
+                KeyboardButton(text="/save ✅"),
                 KeyboardButton(text="/cancel ❌"),
             ]
         ],
@@ -89,7 +89,7 @@ async def save_dump(message: Message, state: FSMContext):
         return
     result_message = {"title": title,
                       'description': description,
-                      'photos': [{'telegram_file_id': file_id, 'file_name': file_name} for file_id,file_name in zip(photos, file_names)]
+                      'photos': [{'telegram_file_id': file_id, 'file_name': file_name} for file_id, file_name in zip(photos, file_names)]
                       }
     dump_id = dumps_db.insert(result_message['title'], result_message['description'])
     for photo_item in result_message['photos']:
