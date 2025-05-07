@@ -101,7 +101,23 @@ class PhotoDumps(DataBase):
     """
     def __init__(self, db_path="data.db"):
         super().__init__(db_path)  # Вызов родительского __init__
-        self.cache = None
+        self.cache = self.get_dumps_cache()
+
+    def select_all(self):
+        with sqlite3.connect(self.db_path) as conn:
+            response = conn.execute(
+                'SELECT * FROM dumps'
+            ).fetchall()
+
+        return response
+
+    def get_dumps_cache(self):
+        data = self.select_all()
+        if data:
+            cash = {key: value for value, key, _ in data}
+            return cash
+        else:
+            return dict({})
 
     def insert(self, title: str, description: str = 1):
         if len(title) >= 62:
@@ -112,7 +128,9 @@ class PhotoDumps(DataBase):
                 (title, description,)
             )
             last_id = cursor.lastrowid
+
         return last_id
+
 
 
 class PhotoFiles(DataBase):
@@ -131,3 +149,4 @@ class PhotoFiles(DataBase):
 users_db = Users()
 dumps_db = PhotoDumps()
 files_db = PhotoFiles()
+

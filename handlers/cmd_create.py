@@ -43,8 +43,12 @@ async def cmd_photos(message: Message, state: FSMContext):
 
 @router.message(PhotoDump.waiting_for_title)
 async def process_title(message: Message, state: FSMContext):
+
     if len(message.text) > 62:
         await message.answer("Название слишком длинное. Максимум 62 символа. Попробуйте еще раз")
+        return
+    if message.text in dumps_db.cache.keys():
+        await message.answer(f"База данных уже содержит группу по имени <{message.text}>. Придумайте другое имя")
         return
 
     await state.update_data(title=message.text)
