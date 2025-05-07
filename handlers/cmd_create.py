@@ -9,8 +9,8 @@ import os
 from pathlib import Path
 from services.database import dumps_db, files_db
 
+
 router = Router()
-users_db.init()  # Инициализируем экземпляр класса
 PHOTOS_DIR = 'temp'
 Path(PHOTOS_DIR).mkdir(exist_ok=True)
 
