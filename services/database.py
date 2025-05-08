@@ -65,7 +65,7 @@ class Users(DataBase):
 
     def __init__(self, db_path="data.db"):
         super().__init__(db_path)  # Вызов родительского __init__
-        self.cache = self.get_users_cache()
+        self.cache: dict = self.get_users_cache()
 
     def init(self):
         pass
@@ -84,6 +84,7 @@ class Users(DataBase):
                 'INSERT INTO users (user_id, user_permission) VALUES(?, ?)',
                 (user_id, user_permission, )
             )
+        self.cache[user_id] = user_permission
         return
 
     def get_users_cache(self):
@@ -101,7 +102,7 @@ class PhotoDumps(DataBase):
     """
     def __init__(self, db_path="data.db"):
         super().__init__(db_path)  # Вызов родительского __init__
-        self.cache = self.get_dumps_cache()
+        self.cache_list: list = self.get_dumps_cache()
 
     def select_all(self):
         with sqlite3.connect(self.db_path) as conn:
@@ -114,23 +115,31 @@ class PhotoDumps(DataBase):
     def get_dumps_cache(self):
         data = self.select_all()
         if data:
-            cash = {key: value for value, key, _ in data}
+            cash = [{'title': item[1], 'id': item[0]} for item in data]
             return cash
         else:
-            return dict({})
+            return []
 
     def insert(self, title: str, description: str = 1):
-        if len(title) >= 62:
-            title = title[:62]
+        if len(title) >= 64:
+            title = title[:64]
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.execute(
                 'INSERT INTO dumps (title, description) VALUES(?, ?)',
                 (title, description,)
             )
             last_id = cursor.lastrowid
-
+        self.cache_list.append({'title': title, 'id': last_id})  # Добавляем новую запись в рабочий список
         return last_id
+    
+    def select_row_by_id(self, id_):
+        with sqlite3.connect(self.db_path) as conn:
+            response = conn.execute(
+                'SELECT * FROM dumps WHERE id=?',
+                (id_, )
+            ).fetchone()
 
+        return response
 
 
 class PhotoFiles(DataBase):
@@ -145,8 +154,17 @@ class PhotoFiles(DataBase):
                 (photo_name, telegram_file_id, dump_id, )
             )
 
+    def select_rows_by_id(self, dump_id):
+        with sqlite3.connect(self.db_path) as conn:
+            response = conn.execute(
+                'SELECT * FROM photos WHERE dump_id = ?',
+                (dump_id, )
+            ).fetchall()
+        if response:
+            return [{'photo_name': item[0], 'telegram_file_id': item[1]} for item in response]
+        return response
+
 
 users_db = Users()
 dumps_db = PhotoDumps()
 files_db = PhotoFiles()
-

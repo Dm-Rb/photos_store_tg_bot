@@ -2,8 +2,9 @@ from config_file import config
 import asyncio
 from aiogram import Bot, Dispatcher
 from aiogram.types import BotCommand
-from handlers import cmd_start, cmd_create
+from handlers import cmd_start, cmd_create, cmd_show
 from middlewares.ban import BanMiddleware  # Импортируем наш middleware
+from callbacks import dumps_processing
 
 
 async def main():
@@ -14,10 +15,17 @@ async def main():
     # подключаем роутеры к диспетчеру
     dp.include_router(cmd_start.router)
     dp.include_router(cmd_create.router)
+    dp.include_router(cmd_show.router)
+    dp.include_router(dumps_processing.router)
+
+
     dp.update.middleware(BanMiddleware())  # Будет применяться ко всем событиям
+
     # Устанавливаем команды бота
     await bot.set_my_commands([
         BotCommand(command="start", description="Запустить бота"),
+        BotCommand(command="create", description="Создать новую группу фотографий"),
+        BotCommand(command="show", description="Посмотреть все группы фотографий")
     ])
 
     # Запускаем long polling

@@ -1,6 +1,5 @@
 from aiogram import Router, F
 from aiogram.types import Message
-from services.database import users_db
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 from aiogram.filters import Command
@@ -8,6 +7,8 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemo
 import os
 from pathlib import Path
 from services.database import dumps_db, files_db
+from text.handlers_txt import msg_cmd_cancel, msg_cmd_photos, msgs_process_title, \
+    msg_process_description, msg_wrong_input_in_photos_state, msg_save_dump
 
 
 router = Router()
@@ -21,7 +22,7 @@ async def cmd_cancel(message: Message, state: FSMContext):
     current_state = await state.get_state()
     if current_state is None:
         return
-    await message.answer("❌ Форма отменена. FSM сброшен.", reply_markup=ReplyKeyboardRemove())
+    await message.answer(text=msg_cmd_cancel, reply_markup=ReplyKeyboardRemove())
     await state.clear()  # Полный сброс состояния
 
 
@@ -34,35 +35,29 @@ class PhotoDump(StatesGroup):
 
 @router.message(Command("create"))
 async def cmd_photos(message: Message, state: FSMContext):
-    await message.answer(
-        "Укажите название для набора фотографий (не более 62 символов)\n"
-        "/cancel - отменить создание"
-    )
+    await message.answer(text=msg_cmd_photos, parse_mode='HTML')
     await state.set_state(PhotoDump.waiting_for_title)
 
 
 @router.message(PhotoDump.waiting_for_title)
 async def process_title(message: Message, state: FSMContext):
 
-    if len(message.text) > 62:
-        await message.answer("Название слишком длинное. Максимум 62 символа. Попробуйте еще раз")
+    if len(message.text) > 64:
+        await message.answer(msgs_process_title['title_too_long'], parse_mode='HTML')
         return
-    if message.text in dumps_db.cache.keys():
-        await message.answer(f"База данных уже содержит группу по имени <{message.text}>. Придумайте другое имя")
+    if message.text in [i['title'] for i in dumps_db.cache_list]:
+        await message.answer(text=msgs_process_title['title_is_exist'], parse_mode='HTML')
         return
 
     await state.update_data(title=message.text)
-    await message.answer("Теперь добавьте описание")
+    await message.answer(text=msgs_process_title['input_description'], parse_mode='HTML')
     await state.set_state(PhotoDump.waiting_for_description)
 
 
 @router.message(PhotoDump.waiting_for_description)
 async def process_description(message: Message, state: FSMContext):
     await state.update_data(description=message.text)
-    # await message.answer(
-    #     "Теперь загрузите фотографии (одну или несколько).\n"
-    #     "Когда закончите, введите команду /save для сохранения"
-    # )
+
     kb = ReplyKeyboardMarkup(
         keyboard=[
             [
@@ -72,7 +67,7 @@ async def process_description(message: Message, state: FSMContext):
         ],
         resize_keyboard=True
     )
-    await message.answer(text='Загрузите фотографии (одну или несколько)\nКогда закончите, введите команду /save для сохранения', reply_markup=kb)
+    await message.answer(text=msg_process_description, reply_markup=kb)
     await state.set_state(PhotoDump.waiting_for_photos)
     # Инициализируем список для хранения информации о фото
     await state.update_data(photos=[], file_names=[])
@@ -86,10 +81,7 @@ async def save_dump(message: Message, state: FSMContext):
     photos = data.get("photos", [])
     file_names = data.get("file_names", [])
     if not photos:
-        await message.answer(
-            "❌ Вы не отправили ни одной фотографии перед сохранением!\n"
-            "Пожалуйста, отправьте фото, а затем используйте /save",
-        )
+        await message.answer(text=msg_save_dump)
         return
     result_message = {"title": title,
                       'description': description,
@@ -120,14 +112,12 @@ async def handle_photos(message: Message, state: FSMContext):
     photos = data.get("photos", [])
     file_names = data.get("file_names", [])
 
-
     photos.append(photo.file_id)
     file_names.append(file_name)
 
     await state.update_data(photos=photos, file_names=file_names)
 
+
 @router.message(PhotoDump.waiting_for_photos)
 async def wrong_input_in_photos_state(message: Message):
-    await message.answer("Пожалуйста, загружайте только фотографии. Когда закончите, введите /save")
-
-# --- CREATE END---
+    await message.answer(text=msg_wrong_input_in_photos_state)
