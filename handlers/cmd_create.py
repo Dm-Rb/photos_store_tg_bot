@@ -67,7 +67,7 @@ async def process_description(message: Message, state: FSMContext):
         ],
         resize_keyboard=True
     )
-    await message.answer(text=msg_process_description, reply_markup=kb)
+    await message.answer(text=msg_process_description, parse_mode='HTML', reply_markup=kb)
     await state.set_state(PhotoDump.waiting_for_photos)
     # Инициализируем список для хранения информации о фото
     await state.update_data(photos=[], file_names=[])
@@ -81,10 +81,10 @@ async def save_dump(message: Message, state: FSMContext):
     photos = data.get("photos", [])
     file_names = data.get("file_names", [])
     if not photos:
-        await message.answer(text=msg_save_dump)
+        await message.answer(text=msg_save_dump, parse_mode='HTML')
         return
     result_message = {"title": title,
-                      'description': description,
+                      'description': "© " + description,
                       'photos': [{'telegram_file_id': file_id, 'file_name': file_name} for file_id, file_name in zip(photos, file_names)]
                       }
     dump_id = dumps_db.insert(result_message['title'], result_message['description'])

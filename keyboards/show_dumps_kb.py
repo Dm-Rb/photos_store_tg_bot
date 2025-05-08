@@ -17,9 +17,10 @@ async def build_dumps_keyboard_with_pagination(page: int = 0) -> InlineKeyboardM
 
     # Добавляем кнопки элементов
     for item in current_page_items:
-        button_name = item['title']
-        if len(button_name) > 38:
-            button_name = f"{button_name[:34]}..."
+        button_name = f"🗂 {item['title']}"
+        if len(button_name) > 40:
+            button_name = f"{button_name[:48]}..."
+
         builder.button(text=button_name, callback_data=f"dumpid_{str(item['id'])}")
 
     # Добавляем кнопки навигации
@@ -34,7 +35,7 @@ async def build_dumps_keyboard_with_pagination(page: int = 0) -> InlineKeyboardM
     # Кнопка "Вперёд" (если не на последней странице)
     if end_idx < len(dumps_db.cache_list):
         navigation_buttons.append(
-            types.InlineKeyboardButton(text="Вперёд ➡️", callback_data="next_page")
+            types.InlineKeyboardButton(text="Далей ➡️", callback_data="next_page")
         )
 
     # Располагаем элементы

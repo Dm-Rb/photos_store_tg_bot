@@ -18,7 +18,7 @@ class PaginationState(StatesGroup):
 async def cmd_show(message: Message, state: FSMContext):
     """Обработка команды /show - инициализация пагинации"""
     await state.set_state(PaginationState.viewing_list)
-    await state.update_data(current_page=0) # Начинаем с первой страницы
+    await state.update_data(current_page=0)  # Начинаем с первой страницы
     await message.answer(
         text=msg_cmd_show,
         reply_markup=await build_dumps_keyboard_with_pagination(0)

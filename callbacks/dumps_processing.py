@@ -3,6 +3,8 @@ from aiogram.fsm.context import FSMContext
 from handlers.cmd_show import PaginationState
 from keyboards.show_dumps_kb import build_dumps_keyboard_with_pagination
 from services.database import dumps_db, files_db
+from text.handlers_txt import msg_handle_item_selection
+
 
 router = Router()
 
@@ -37,7 +39,8 @@ async def handle_item_selection(callback: types.CallbackQuery):
 
     # Отправляем тектовое сообщение с описанием
     _, title, description = dumps_db.select_row_by_id(int(dump_id))
-    await callback.message.answer(text=f"{title}\n{description}")
+    msg = msg_handle_item_selection(title, description)
+    await callback.message.answer(text=msg, parse_mode="HTML")
 
     # Отправляем группу файлов
     photos_list = files_db.select_rows_by_id(dump_id)
