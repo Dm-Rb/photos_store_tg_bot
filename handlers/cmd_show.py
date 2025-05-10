@@ -21,5 +21,6 @@ async def cmd_show(message: Message, state: FSMContext):
     await state.update_data(current_page=0)  # Начинаем с первой страницы
     await message.answer(
         text=msg_cmd_show,
+        parse_mode="HTML",
         reply_markup=await build_dumps_keyboard_with_pagination(0)
     )

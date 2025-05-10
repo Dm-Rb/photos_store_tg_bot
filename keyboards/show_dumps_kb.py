@@ -3,10 +3,11 @@ from aiogram.types import InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from services.database import dumps_db
 
+
 ITEMS_PER_PAGE = 10  # Количество элементов на странице
 
 
-async def build_dumps_keyboard_with_pagination(page: int = 0) -> InlineKeyboardMarkup:
+async def build_dumps_keyboard_with_pagination(page: int = 0, edit=False) -> InlineKeyboardMarkup:
     """Строит клавиатуру с пагинацией"""
     start_idx = page * ITEMS_PER_PAGE
     end_idx = start_idx + ITEMS_PER_PAGE
@@ -20,8 +21,10 @@ async def build_dumps_keyboard_with_pagination(page: int = 0) -> InlineKeyboardM
         button_name = f"🗂 {item['title']}"
         if len(button_name) > 40:
             button_name = f"{button_name[:48]}..."
-
-        builder.button(text=button_name, callback_data=f"dumpid_{str(item['id'])}")
+        if edit:
+            builder.button(text=button_name, callback_data=f"editdumpid_{str(item['id'])}")
+        else:
+            builder.button(text=button_name, callback_data=f"dumpid_{str(item['id'])}")
 
     # Добавляем кнопки навигации
     navigation_buttons = []

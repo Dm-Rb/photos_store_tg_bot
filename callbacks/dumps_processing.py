@@ -4,6 +4,10 @@ from handlers.cmd_show import PaginationState
 from keyboards.show_dumps_kb import build_dumps_keyboard_with_pagination
 from services.database import dumps_db, files_db
 from text.handlers_txt import msg_handle_item_selection
+from keyboards.edit_dump_kb import build_edit_keyboard
+from handlers.cmd_edit import EditState
+from aiogram.fsm.state import StatesGroup, State
+from aiogram.fsm.context import FSMContext
 
 
 router = Router()
@@ -32,9 +36,8 @@ async def handle_page_change(callback: types.CallbackQuery, state: FSMContext):
 
 
 @router.callback_query(PaginationState.viewing_list, F.data.startswith("dumpid_"))
-async def handle_item_selection(callback: types.CallbackQuery):
+async def handle_show_dump(callback: types.CallbackQuery):
     """Обработка выбора элемента"""
-    print(callback.data)
     dump_id = callback.data.split("_")[1]
 
     # Отправляем тектовое сообщение с описанием
@@ -55,3 +58,23 @@ async def handle_item_selection(callback: types.CallbackQuery):
         await callback.message.answer_media_group(media=media_group)
     # Подтверждаем обработку колбэка (убираем "часики")
     await callback.answer()
+
+
+@router.callback_query(PaginationState.viewing_list, F.data.startswith("editdumpid_"))
+async def handle_edit_dump(callback: types.CallbackQuery):
+    """Обработка выбранного елемпнта дампа в режіме редактирования"""
+    dump_id = callback.data.split("_")[1]
+    _, title, _ = dumps_db.select_row_by_id(int(dump_id))
+    await callback.message.answer(text=title, parse_mode="HTML", reply_markup=await build_edit_keyboard(dump_id))
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("edit_description"))
+async def handle_edit_description_dump(callback: types.CallbackQuery, state: FSMContext):
+    """Обработка выбора элемента"""
+    dump_id = callback.data.split(";")[1]
+    await state.set_state(EditState.waiting_for_description)
+    await state.update_data(dump_id=dump_id)
+    await callback.answer()
+    await callback.message.answer(text="Добавьте комментарій", parse_mode="HTML")
+

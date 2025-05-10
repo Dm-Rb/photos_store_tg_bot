@@ -141,6 +141,22 @@ class PhotoDumps(DataBase):
 
         return response
 
+    def update_description_by_id(self, id_, text):
+        with sqlite3.connect(self.db_path) as conn:
+            sql = """
+                UPDATE dumps 
+                SET description = COALESCE(description, '') || '***' || ?
+                WHERE id = ?;
+            """
+            # Передаём параметры в правильном порядке: text идёт первым, затем id_
+            conn.execute(sql, (text, id_))
+            conn.commit()
+
+
+
+
+
+
 
 class PhotoFiles(DataBase):
     def __init__(self, db_path="data.db"):
@@ -168,3 +184,6 @@ class PhotoFiles(DataBase):
 users_db = Users()
 dumps_db = PhotoDumps()
 files_db = PhotoFiles()
+
+
+# dumps_db.update_description_by_id(4, 'jkjkjk jjjjdvdf')
