@@ -37,9 +37,9 @@ async def cmd_cancel(message: Message, state: FSMContext):
 @router.message(Command("create"))
 async def cmd_photos(message: Message, state: FSMContext):
     """Initializes a pipeline that creates and populates a new directory"""
+
     if not users_db.cache.get(message.from_user.id, None):
         return
-
 
     await message.answer(text=msg_cmd_photos, parse_mode='HTML')
     await state.set_state(MemoryDump.waiting_for_title)  # first step it is input title. Set FSM
@@ -48,9 +48,11 @@ async def cmd_photos(message: Message, state: FSMContext):
 @router.message(MemoryDump.waiting_for_title)
 async def process_title(message: Message, state: FSMContext):
     """Handler that intercepts user-entered title"""
+
     if len(message.text) > 64:
         await message.answer(msgs_process_title['title_too_long'], parse_mode='HTML')
         return
+
     if message.text in [i['title'] for i in catalogs_db.cache_list]:
         await message.answer(text=msgs_process_title['title_is_exist'], parse_mode='HTML')
         return
@@ -64,6 +66,7 @@ async def process_title(message: Message, state: FSMContext):
 @router.message(MemoryDump.waiting_for_description)
 async def process_description(message: Message, state: FSMContext):
     """Handler that intercepts user-entered description"""
+
     # # Intercept user message and store in <state.data>
     await state.update_data(description=message.text)
     # Buttons for user-friendly
@@ -87,6 +90,7 @@ async def handle_photos(message: Message, state: FSMContext):
         # We take the highest quality version.
         file_ext = "jpg"
         file_name_start = 'photo'
+
     elif message.video:
         # Processing video
         media = message.video
@@ -115,6 +119,10 @@ async def handle_photos(message: Message, state: FSMContext):
 
 @router.message(MemoryDump.waiting_for_mediafiles, Command("save"))
 async def handle_cmd_save(message: Message, state: FSMContext):
+    """ Retrieves gathered data from <state.data>
+        Saves data to database
+        Resets the state"""
+
     data = await state.get_data()
     title = data.get("title", None)
     if not title:
@@ -138,8 +146,8 @@ async def handle_cmd_save(message: Message, state: FSMContext):
     await state.clear()
 
 
-
-
 @router.message(MemoryDump.waiting_for_mediafiles)
 async def wrong_input_in_photos_state(message: Message):
+    """Handler for sending response when user provides invalid media data type"""
+
     await message.answer(text=msg_wrong_input_in_photos_state)
