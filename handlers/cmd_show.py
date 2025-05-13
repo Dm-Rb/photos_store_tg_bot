@@ -4,7 +4,7 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from keyboards.catalog_kb import build_dumps_keyboard_with_pagination
-from text.handlers_txt import msg_cmd_show
+from text.messages import msg_cmd_show
 from services.database import users_db
 
 
@@ -17,7 +17,7 @@ class PaginationState(StatesGroup):
 
 @router.message(Command("show"))
 async def cmd_show(message: Message, state: FSMContext):
-    """Обработка команды /show - инициализация пагинации"""
+    """Shows paginated inline keyboard (buttons is media catalog names)"""
 
     if not users_db.cache.get(message.from_user.id, None):
         return
@@ -26,5 +26,5 @@ async def cmd_show(message: Message, state: FSMContext):
     await message.answer(
         text=msg_cmd_show,
         parse_mode="HTML",
-        reply_markup=await build_dumps_keyboard_with_pagination(0)
+        reply_markup=await build_dumps_keyboard_with_pagination(0)  # Shows pagination
     )

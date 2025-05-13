@@ -4,7 +4,7 @@ from services.database import catalogs_db
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 
-ITEMS_PER_PAGE = 10  # Количество элементов на странице
+ITEMS_PER_PAGE = 10  # Keyboard button limit
 
 
 async def build_dumps_keyboard_with_pagination(page: int = 0, edit=False) -> InlineKeyboardMarkup:
@@ -21,9 +21,9 @@ async def build_dumps_keyboard_with_pagination(page: int = 0, edit=False) -> Inl
         if len(button_name) > 40:
             button_name = f"{button_name[:48]}..."
         if edit:
-            builder.button(text=button_name, callback_data=f"editdumpid_{str(item['id'])}")
+            builder.button(text=button_name, callback_data=f"edit:{str(item['id'])}")
         else:
-            builder.button(text=button_name, callback_data=f"dumpid_{str(item['id'])}")
+            builder.button(text=button_name, callback_data=f"show:{str(item['id'])}")
 
     # Добавляем кнопки навигации
     navigation_buttons = []

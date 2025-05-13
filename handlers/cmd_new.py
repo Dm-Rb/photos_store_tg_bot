@@ -5,19 +5,20 @@ from aiogram.fsm.context import FSMContext
 from aiogram.filters import Command
 from aiogram.types import ReplyKeyboardRemove
 from keyboards.keyboards import save_cancel_kb
+from handlers.cmd_edit import EditDump
+from services.database import catalogs_db, files_db, users_db
+from text.messages import msg_cmd_cancel, msg_cmd_photos, msgs_process_title, \
+    msg_process_description, msg_wrong_input_in_photos_state, msg_save_dump, msg_done
 import os
 from pathlib import Path
-from services.database import catalogs_db, files_db, users_db
-from text.handlers_txt import msg_cmd_cancel, msg_cmd_photos, msgs_process_title, \
-    msg_process_description, msg_wrong_input_in_photos_state, msg_save_dump
 
 
 router = Router()
-PHOTOS_DIR = 'files'  # Tmp-dir for photos, video and archives
-Path(PHOTOS_DIR).mkdir(exist_ok=True)
+FILES_DIR = 'files'  # Tmp-dir for photos, video and archives
+Path(FILES_DIR).mkdir(exist_ok=True)
 
 
-class MemoryDump(StatesGroup):
+class NewDump(StatesGroup):
     waiting_for_title = State()  # FSM for title
     waiting_for_description = State()  # FSM for description
     waiting_for_mediafiles = State()  # FSM  for files
@@ -34,18 +35,18 @@ async def cmd_cancel(message: Message, state: FSMContext):
     await state.clear()
 
 
-@router.message(Command("create"))
-async def cmd_photos(message: Message, state: FSMContext):
+@router.message(Command("new"))
+async def cmd_new(message: Message, state: FSMContext):
     """Initializes a pipeline that creates and populates a new directory"""
 
     if not users_db.cache.get(message.from_user.id, None):
         return
 
     await message.answer(text=msg_cmd_photos, parse_mode='HTML')
-    await state.set_state(MemoryDump.waiting_for_title)  # first step it is input title. Set FSM
+    await state.set_state(NewDump.waiting_for_title)  # first step it is input title. Set FSM
 
 
-@router.message(MemoryDump.waiting_for_title)
+@router.message(NewDump.waiting_for_title)
 async def process_title(message: Message, state: FSMContext):
     """Handler that intercepts user-entered title"""
 
@@ -60,10 +61,10 @@ async def process_title(message: Message, state: FSMContext):
     await state.update_data(title=message.text)
     # Prompt user to enter description and switch FSM state
     await message.answer(text=msgs_process_title['input_description'], parse_mode='HTML')
-    await state.set_state(MemoryDump.waiting_for_description)
+    await state.set_state(NewDump.waiting_for_description)
 
 
-@router.message(MemoryDump.waiting_for_description)
+@router.message(NewDump.waiting_for_description)
 async def process_description(message: Message, state: FSMContext):
     """Handler that intercepts user-entered description"""
 
@@ -73,15 +74,16 @@ async def process_description(message: Message, state: FSMContext):
     kb = await save_cancel_kb()
     # Prompt user to upload photos or videos and switch FSM state
     await message.answer(text=msg_process_description, parse_mode='HTML', reply_markup=kb)
-    await state.set_state(MemoryDump.waiting_for_mediafiles)
+    await state.set_state(NewDump.waiting_for_mediafiles)
     # Initialized empty lists in <state>
     await state.update_data(media_id_lst=[], file_names_lst=[])
 
 
-@router.message(MemoryDump.waiting_for_mediafiles, F.photo | F.video)
-async def handle_photos(message: Message, state: FSMContext):
+@router.message(EditDump.waiting_for_mediafiles, F.photo | F.video)
+@router.message(NewDump.waiting_for_mediafiles, F.photo | F.video)
+async def process_mediafiles(message: Message, state: FSMContext):
     """This handler intercepts a media file or media group (videos/images) sent by user.
-       The files are downloaded locally and their data is stored to <state.data>"""
+       The files are downloaded locally to <FILES_DIR> and their data is stored to <state.data>"""
 
     if message.photo:
         # Processing photo
@@ -100,7 +102,7 @@ async def handle_photos(message: Message, state: FSMContext):
         return
     # Create a unique file name
     file_name = f"{file_name_start}_{message.from_user.id}_{media.file_unique_id}.{file_ext}"
-    file_path = os.path.join(PHOTOS_DIR, file_name)
+    file_path = os.path.join(FILES_DIR, file_name)
 
     # Download file
     file = await message.bot.get_file(media.file_id)
@@ -117,12 +119,12 @@ async def handle_photos(message: Message, state: FSMContext):
     await state.update_data(media_id_lst=media_id_lst, file_names_lst=file_names_lst)
 
 
-@router.message(MemoryDump.waiting_for_mediafiles, Command("save"))
-async def handle_cmd_save(message: Message, state: FSMContext):
+@router.message(NewDump.waiting_for_mediafiles, Command("save"))
+async def cmd_save_4_new(message: Message, state: FSMContext):
     """ Retrieves gathered data from <state.data>
-        Saves data to database
-        Resets the state"""
+        Saves data to database. Resets the state"""
 
+    # Get data from <state>
     data = await state.get_data()
     title = data.get("title", None)
     if not title:
@@ -133,21 +135,22 @@ async def handle_cmd_save(message: Message, state: FSMContext):
     if not media_id_lst:
         await message.answer(text=msg_save_dump, parse_mode='HTML')
         return
-
+    # Compiling an array for processing and database persistence
     media_groups = [{'file_id': file_id, 'file_name': file_name} for file_id, file_name in zip(media_id_lst, file_names_lst)]
     result_message = {"title": title,
-                      'description': "© " + description,
+                      'description': "© " + description if description else None,
                       'media_groups': media_groups
                       }
     dump_id = catalogs_db.insert(result_message['title'], result_message['description'])
+    # Iterating through the array and writing items to the database
     for photo_item in result_message['media_groups']:
         files_db.insert(photo_item['file_name'], photo_item['file_id'], dump_id)
-    await message.answer("Готово", reply_markup=ReplyKeyboardRemove())
+    await message.answer(msg_done, reply_markup=ReplyKeyboardRemove())
     await state.clear()
 
 
-@router.message(MemoryDump.waiting_for_mediafiles)
-async def wrong_input_in_photos_state(message: Message):
+@router.message(NewDump.waiting_for_mediafiles)
+async def wrong_input_in_mediafiles_state(message: Message):
     """Handler for sending response when user provides invalid media data type"""
 
     await message.answer(text=msg_wrong_input_in_photos_state)

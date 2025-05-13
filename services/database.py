@@ -86,6 +86,16 @@ class Users(DataBase):
         self.cache[user_id] = user_permission
         return
 
+    def delete(self, user_id):
+        with sqlite3.connect(self.db_path) as conn:
+            try:
+                conn.execute(
+                    'DELETE FROM users WHERE user_id=?',
+                    (user_id, )
+                )
+            except Exception as ex_:
+                return
+
     def get_users_cache(self):
         data = self.select_all()
         if data:
