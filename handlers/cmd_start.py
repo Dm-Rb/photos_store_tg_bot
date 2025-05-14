@@ -56,7 +56,7 @@ async def process_password(message: Message, state: FSMContext):
     if message.text == PASSPHRASE:
         #  Add to user list (user cache) with flag 1 (write and edit permission)
         users_db.cache[message.from_user.id] = 1
-        users_db.insert(user_id=message.from_user.id, user_permission=1)  # record to DB
+        await users_db.insert(user_id=message.from_user.id, user_permission=1)  # record to DB
         await message.answer(msgs_process_password['successful_auth'])
         await state.clear()
         return
@@ -64,13 +64,14 @@ async def process_password(message: Message, state: FSMContext):
     if attempts >= MAX_ATTEMPTS_PASSPHRASE:
         await message.answer(msgs_process_password['ban'])
         users_db.cache[message.from_user.id] = 3  # Add to user list (user cache) with flag 3 (ban)
-        users_db.insert(user_id=message.from_user.id, user_permission=3)  # Пишем в БД
+        await users_db.insert(user_id=message.from_user.id, user_permission=3)  # Пишем в БД
         await state.clear()
         return
 
     await state.update_data(attempts=attempts)
     remaining = MAX_ATTEMPTS_PASSPHRASE - attempts
     try:
-        await message.answer(msgs_process_password['invalid_pass'] + remaining)
+        await message.answer(msgs_process_password['invalid_pass'] + str(remaining))
     except TypeError:
+        print('aasa')
         return

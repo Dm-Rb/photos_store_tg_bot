@@ -52,7 +52,7 @@ async def add_description(message: Message, state: FSMContext):
     data = await state.get_data()
     dump_id = data.get("dump_id", None)
     text = f"© {message.text.strip()}"
-    catalogs_db.update_description_by_id(dump_id, text)
+    await catalogs_db.update_description_by_id(dump_id, text)
     await state.clear()
     await message.answer(
         text=msg_done,
@@ -64,7 +64,7 @@ async def add_description(message: Message, state: FSMContext):
     await send_notification_all_users(notification_type='new', catalog_tittle=title, user_id_ignore=message.from_user.id)
     # Updating a datetime cell value in the database
     datetime_record = datetime.datetime.now().replace(microsecond=0)
-    catalogs_db.update_datetime_by_id(id_=dump_id, datetime=datetime_record)
+    await catalogs_db.update_datetime_by_id(id_=dump_id, datetime=datetime_record)
 
 
 @router.message(EditDump.waiting_for_mediafiles, Command("save"))
@@ -80,13 +80,13 @@ async def handle_cmd_save_4_editdump(message: Message, state: FSMContext):
 
     # Iterating through the array and writing items to the database
     for media_id, file_name in zip(media_id_lst, file_names_lst):
-        files_db.insert(file_name, media_id, dump_id)
+        await files_db.insert(file_name, media_id, dump_id)
 
     await message.answer(msg_done, reply_markup=ReplyKeyboardRemove())
     await state.clear()
     # Updating a datetime cell value in the database
     datetime_record = datetime.datetime.now().replace(microsecond=0)
-    catalogs_db.update_datetime_by_id(id_=dump_id, datetime=datetime_record)
+    await catalogs_db.update_datetime_by_id(id_=dump_id, datetime=datetime_record)
 
 
 

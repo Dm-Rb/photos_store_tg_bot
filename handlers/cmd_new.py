@@ -6,10 +6,10 @@ from aiogram.filters import Command
 from aiogram.types import ReplyKeyboardRemove
 from keyboards.keyboards import save_cancel_kb
 from handlers.cmd_edit import EditDump
+from handlers.notifications import send_notification_all_users
 from services.database import catalogs_db, files_db, users_db
 from text.messages import msg_cmd_cancel, msg_cmd_photos, msgs_process_title, \
     msg_process_description, msg_wrong_input_in_photos_state, msg_save_dump, msg_done
-from handlers.notifications import send_notification_all_users
 import os
 from pathlib import Path
 import datetime
@@ -40,7 +40,6 @@ async def cmd_cancel(message: Message, state: FSMContext):
 @router.message(Command("new"))
 async def cmd_new(message: Message, state: FSMContext):
     """Initializes a pipeline that creates and populates a new directory"""
-
     if not users_db.cache.get(message.from_user.id, None):
         return
 
@@ -55,7 +54,6 @@ async def process_title(message: Message, state: FSMContext):
     if len(message.text) > 64:
         await message.answer(msgs_process_title['title_too_long'], parse_mode='HTML')
         return
-
     if message.text in [i['title'] for i in catalogs_db.cache_list]:
         await message.answer(text=msgs_process_title['title_is_exist'], parse_mode='HTML')
         return
@@ -145,10 +143,10 @@ async def cmd_save_4_new(message: Message, state: FSMContext):
                       'media_groups': media_groups
                       }
     datetime_record = datetime.datetime.now().replace(microsecond=0)
-    dump_id = catalogs_db.insert(result_message['title'], result_message['description'], datetime_record)
+    dump_id = await catalogs_db.insert(result_message['title'], result_message['description'], datetime_record)
     # Iterating through the array and writing items to the database
     for photo_item in result_message['media_groups']:
-        files_db.insert(photo_item['file_name'], photo_item['file_id'], dump_id)
+        await files_db.insert(photo_item['file_name'], photo_item['file_id'], dump_id)
     await message.answer(msg_done, reply_markup=ReplyKeyboardRemove())
     await state.clear()
     await send_notification_all_users(notification_type='new', catalog_tittle=title, user_id_ignore=message.from_user.id)

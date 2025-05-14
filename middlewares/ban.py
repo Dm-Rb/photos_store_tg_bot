@@ -4,9 +4,6 @@ from typing import Dict, Any, Callable, Awaitable
 from services.database import users_db
 
 
-users_db.init()
-
-
 class BanMiddleware(BaseMiddleware):
     """
     Middleware для блокировки пользователей из бан-листа.

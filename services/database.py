@@ -1,6 +1,6 @@
 import aiosqlite
-import sqlite3
 from pathlib import Path
+import sqlite3
 
 
 class DataBase:
@@ -67,137 +67,137 @@ class Users(DataBase):
         super().__init__(db_path)  # Вызов родительского __init__
         self.cache: dict = self.get_users_cache()
 
-    def init(self):
-        pass
-
-    def select_all(self):
+    def get_users_cache(self):
         with sqlite3.connect(self.db_path) as conn:
             response = conn.execute(
                 'SELECT * FROM users'
             ).fetchall()
 
-        return response
-
-    def insert(self, user_id: int, user_permission: int = 1):
-        with sqlite3.connect(self.db_path) as conn:
-            conn.execute(
-                'INSERT INTO users (user_id, user_permission) VALUES(?, ?)',
-                (user_id, user_permission, )
-            )
-        self.cache[user_id] = user_permission
-        return
-
-    def delete(self, user_id):
-        with sqlite3.connect(self.db_path) as conn:
-            try:
-                conn.execute(
-                    'DELETE FROM users WHERE user_id=?',
-                    (user_id, )
-                )
-            except Exception as ex_:
-                return
-
-    def get_users_cache(self):
-        data = self.select_all()
-        if data:
-            cash = {key: value for key, value in data}
+        if response:
+            cash = {key: value for key, value in response}
             return cash
         else:
             return dict({})
+
+    async def select_all(self):
+        async with aiosqlite.connect(self.db_path) as conn:
+            async with conn.execute('SELECT * FROM users') as cursor:
+                return await cursor.fetchall()
+
+    async def insert(self, user_id: int, user_permission: int = 1):
+        async with aiosqlite.connect(self.db_path) as conn:
+            await conn.execute(
+                'INSERT INTO users (user_id, user_permission) VALUES(?, ?)',
+                (user_id, user_permission)
+            )
+            await conn.commit()
+        self.cache[user_id] = user_permission
+
+    async def delete(self, user_id):
+        async with aiosqlite.connect(self.db_path) as conn:
+            try:
+                await conn.execute(
+                    'DELETE FROM users WHERE user_id=?',
+                    (user_id,)
+                )
+                await conn.commit()
+            except Exception as ex_:
+                return
 
 
 class Catalogs(DataBase):
     """
     Класс представляет из себя название группы фотографий
     """
+
     def __init__(self, db_path="data.db"):
         super().__init__(db_path)  # Вызов родительского __init__
         self.cache_list: list = self.get_catalogs_cache()
 
-    def select_all(self):
+    def get_catalogs_cache(self):
         with sqlite3.connect(self.db_path) as conn:
             response = conn.execute(
-                'SELECT * FROM catalogs'
+                'SELECT * FROM catalogs ORDER BY datetime DESC'
             ).fetchall()
-
-        return response
-
-    def get_catalogs_cache(self):
-        data = self.select_all()
-        if data:
-            cash = [{'title': item[1], 'id': item[0]} for item in data]
+        if response:
+            cash = [{'title': item[1], 'id': item[0]} for item in response]
             return cash
         else:
             return []
 
-    def insert(self, title: str, description: str = None, datetime: str = None):
+    async def select_all(self):
+        async with aiosqlite.connect(self.db_path) as conn:
+            async with conn.execute('SELECT * FROM catalogs') as cursor:
+                return await cursor.fetchall()
+
+    async def insert(self, title: str, description: str = None, datetime: str = None):
         if len(title) >= 64:
             title = title[:64]
-        with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.execute(
+        async with aiosqlite.connect(self.db_path) as conn:
+            cursor = await conn.execute(
                 'INSERT INTO catalogs (title, description, datetime) VALUES(?, ?, ?)',
-                (title, description, datetime, )
+                (title, description, datetime)
             )
             last_id = cursor.lastrowid
-        self.cache_list.append({'title': title, 'id': last_id})  # Добавляем новую запись в рабочий список
+            await conn.commit()
+        self.cache_list = [{'title': title, 'id': last_id}] + self.cache_list # Добавляем новую запись в начало списока
         return last_id
-    
-    def select_row_by_id(self, id_):
-        with sqlite3.connect(self.db_path) as conn:
-            response = conn.execute(
-                'SELECT * FROM catalogs WHERE id=?',
-                (id_, )
-            ).fetchone()
 
-        return response
+    async def select_row_by_id(self, id_):
+        async with aiosqlite.connect(self.db_path) as conn:
+            async with conn.execute(
+                    'SELECT * FROM catalogs WHERE id=?',
+                    (id_,)
+            ) as cursor:
+                return await cursor.fetchone()
 
-    def update_description_by_id(self, id_, text):
-        with sqlite3.connect(self.db_path) as conn:
+    async def update_description_by_id(self, id_, text):
+        async with aiosqlite.connect(self.db_path) as conn:
             sql = """
                 UPDATE catalogs 
                 SET description = COALESCE(description, '') || '***' || ?
                 WHERE id = ?;
             """
-            # Передаём параметры в правильном порядке: text идёт первым, затем id_
-            conn.execute(sql, (text, id_))
-            conn.commit()
+            await conn.execute(sql, (text, id_))
+            await conn.commit()
 
-    def update_datetime_by_id(self, id_, datetime):
-        with sqlite3.connect(self.db_path) as conn:
+    async def update_datetime_by_id(self, id_, datetime):
+        async with aiosqlite.connect(self.db_path) as conn:
             sql = """
                 UPDATE catalogs 
                 SET datetime = ?
                 WHERE id = ?;
             """
-            # Передаём параметры в правильном порядке: text идёт первым, затем id_
-            conn.execute(sql, (datetime, id_))
-            conn.commit()
+            await conn.execute(sql, (datetime, id_))
+            await conn.commit()
+        self.cache_list: list = self.get_catalogs_cache()
 
 
 class PhotoFiles(DataBase):
     def __init__(self, db_path="data.db"):
         super().__init__(db_path)  # Вызов родительского __init__
-        self.cache = None
 
-    def insert(self, file_name, telegram_file_id, catalog_id):
-        with sqlite3.connect(self.db_path) as conn:
-            conn.execute(
+    async def insert(self, file_name, telegram_file_id, catalog_id):
+        async with aiosqlite.connect(self.db_path) as conn:
+            await conn.execute(
                 'INSERT INTO photos (file_name, telegram_file_id, catalog_id) VALUES(?, ?, ?)',
-                (file_name, telegram_file_id, catalog_id, )
+                (file_name, telegram_file_id, catalog_id)
             )
+            await conn.commit()
 
-    def select_rows_by_id(self, catalog_id):
-        with sqlite3.connect(self.db_path) as conn:
-            response = conn.execute(
-                'SELECT * FROM photos WHERE catalog_id = ?',
-                (catalog_id, )
-            ).fetchall()
+    async def select_rows_by_id(self, catalog_id):
+        async with aiosqlite.connect(self.db_path) as conn:
+            async with conn.execute(
+                    'SELECT * FROM photos WHERE catalog_id = ?',
+                    (catalog_id,)
+            ) as cursor:
+                response = await cursor.fetchall()
         if response:
             return [{'file_name': item[0], 'telegram_file_id': item[1]} for item in response]
         return response
 
 
+
 users_db = Users()
 catalogs_db = Catalogs()
 files_db = PhotoFiles()
-
