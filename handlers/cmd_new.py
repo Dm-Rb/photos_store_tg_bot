@@ -50,7 +50,8 @@ async def cmd_new(message: Message, state: FSMContext):
 @router.message(NewDump.waiting_for_title)
 async def process_title(message: Message, state: FSMContext):
     """Handler that intercepts user-entered title"""
-
+    if not message.text:
+        return
     if len(message.text) > 64:
         await message.answer(msgs_process_title['title_too_long'], parse_mode='HTML')
         return
@@ -155,5 +156,4 @@ async def cmd_save_4_new(message: Message, state: FSMContext):
 @router.message(NewDump.waiting_for_mediafiles)
 async def wrong_input_in_mediafiles_state(message: Message):
     """Handler for sending response when user provides invalid media data type"""
-
     await message.answer(text=msg_wrong_input_in_photos_state)
