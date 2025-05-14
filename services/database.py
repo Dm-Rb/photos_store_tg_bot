@@ -40,7 +40,8 @@ class DataBase:
                 CREATE TABLE IF NOT EXISTS catalogs (
                     id INTEGER PRIMARY KEY,
                     title TEXT NOT NULL,
-                    description TEXT
+                    description TEXT,
+                    datetime TEXT
                 )
                 '''
             )
@@ -52,7 +53,7 @@ class DataBase:
                 f'''
                 CREATE TABLE IF NOT EXISTS photos (
                     file_name TEXT NOT NULL,                    
-                    telegram_file_id INTEGER,
+                    telegram_file_id INTEGER,                    
                     catalog_id INTEGER
                 )
                 '''
@@ -129,13 +130,13 @@ class Catalogs(DataBase):
         else:
             return []
 
-    def insert(self, title: str, description: str = 1):
+    def insert(self, title: str, description: str = None, datetime: str = None):
         if len(title) >= 64:
             title = title[:64]
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.execute(
-                'INSERT INTO catalogs (title, description) VALUES(?, ?)',
-                (title, description,)
+                'INSERT INTO catalogs (title, description, datetime) VALUES(?, ?, ?)',
+                (title, description, datetime, )
             )
             last_id = cursor.lastrowid
         self.cache_list.append({'title': title, 'id': last_id})  # Добавляем новую запись в рабочий список
@@ -159,6 +160,17 @@ class Catalogs(DataBase):
             """
             # Передаём параметры в правильном порядке: text идёт первым, затем id_
             conn.execute(sql, (text, id_))
+            conn.commit()
+
+    def update_datetime_by_id(self, id_, datetime):
+        with sqlite3.connect(self.db_path) as conn:
+            sql = """
+                UPDATE catalogs 
+                SET datetime = ?
+                WHERE id = ?;
+            """
+            # Передаём параметры в правильном порядке: text идёт первым, затем id_
+            conn.execute(sql, (datetime, id_))
             conn.commit()
 
 

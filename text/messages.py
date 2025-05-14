@@ -70,3 +70,23 @@ def msg_handle_item_selection(title, description):
     for description in descriptions:
         message += "<blockquote>" + description.strip() + "</blockquote>" + "\n"
     return message
+
+msg_notifications = {
+    'edit': ""
+}
+def msg_notification(title, type_):
+    if type_ == "edit":
+        text = f"Каталог <b>{title}</b> быў абноўлены\n/show - пазлядзець"
+    elif type_ == "new":
+        text = f"Створаны новы каталог <b>{title}</b>\n/show - пазлядзець"
+    else:
+        text = ''
+    return text
+
+msgs_cmd = {
+    'show': "Паказаць спіс каталогаў",
+    'new': "Стварыць новы каталог",
+    'edit': "Рэдактаваць існуючы каталог",
+    'start': "Запусціць бота",
+    'stop':  "Спыніць бота"
+}

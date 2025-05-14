@@ -7,6 +7,8 @@ from keyboards.catalog_kb import build_dumps_keyboard_with_pagination
 from text.messages import msg_cmd_edit, msg_wrong_input_in_photos_state, msg_done
 from services.database import catalogs_db, users_db, files_db
 from pathlib import Path
+from handlers.notifications import send_notification_all_users
+import datetime
 
 
 router = Router()
@@ -56,6 +58,13 @@ async def add_description(message: Message, state: FSMContext):
         text=msg_done,
         parse_mode="HTML",
     )
+    # Search <tittle>  of catalog by <id> from <catalogs_db.cache_list>
+    result = [item['tittle'] for item in catalogs_db.cache_list if item['id'] == dump_id]
+    title = result[0] if result else None
+    await send_notification_all_users(notification_type='new', catalog_tittle=title, user_id_ignore=message.from_user.id)
+    # Updating a datetime cell value in the database
+    datetime_record = datetime.datetime.now().replace(microsecond=0)
+    catalogs_db.update_datetime_by_id(id_=dump_id, datetime=datetime_record)
 
 
 @router.message(EditDump.waiting_for_mediafiles, Command("save"))
@@ -75,6 +84,10 @@ async def handle_cmd_save_4_editdump(message: Message, state: FSMContext):
 
     await message.answer(msg_done, reply_markup=ReplyKeyboardRemove())
     await state.clear()
+    # Updating a datetime cell value in the database
+    datetime_record = datetime.datetime.now().replace(microsecond=0)
+    catalogs_db.update_datetime_by_id(id_=dump_id, datetime=datetime_record)
+
 
 
 @router.message(EditDump.waiting_for_mediafiles)

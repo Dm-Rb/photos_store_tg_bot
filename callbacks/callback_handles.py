@@ -39,7 +39,7 @@ async def handle_show_dump(callback: types.CallbackQuery):
     """Processes inline keyboard callbacks for catalog navigation"""
 
     dump_id = callback.data.split(":")[1]
-    _, title, description = catalogs_db.select_row_by_id(int(dump_id))
+    _, title, description, _ = catalogs_db.select_row_by_id(int(dump_id))
     msg = msg_handle_item_selection(title, description)
     # Sending a text message with description of catalog
     await callback.message.answer(text=msg, parse_mode="HTML")
@@ -70,7 +70,7 @@ async def handle_edit_dump(callback: types.CallbackQuery):
     """When a catalog is selected from list, sends user inline keyboard with edit options"""
 
     dump_id = callback.data.split(":")[1]
-    _, title, _ = catalogs_db.select_row_by_id(int(dump_id))
+    _, title, _, _ = catalogs_db.select_row_by_id(int(dump_id))
     # Build two buttons: add new description and add new files
     await callback.message.answer(text=title, parse_mode="HTML", reply_markup=await kb.edit_keyboard(dump_id))
     await callback.answer()

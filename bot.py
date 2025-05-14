@@ -5,7 +5,7 @@ from aiogram.types import BotCommand
 from handlers import cmd_start, cmd_new, cmd_show, cmd_edit, cmd_stop
 from middlewares.ban import BanMiddleware  # Импортируем наш middleware
 from callbacks import callback_handles
-
+from text.messages import msgs_cmd
 
 async def main():
     bot = Bot(token=config.BOT_TOKEN)
@@ -22,11 +22,11 @@ async def main():
 
     # Set commands
     await bot.set_my_commands([
-        BotCommand(command="start", description="Запустить бота"),
-        BotCommand(command="show", description="Посмотреть все группы фотографий"),
-        BotCommand(command="new", description="Создать новую группу фотографий"),
-        BotCommand(command="edit", description="Редактировать группу фотографий"),
-        BotCommand(command="stop", description="Редактировать группу фотографий")
+        BotCommand(command="show", description=msgs_cmd['show']),
+        BotCommand(command="new", description=msgs_cmd['new']),
+        BotCommand(command="edit", description=msgs_cmd['edit']),
+        BotCommand(command="start", description=msgs_cmd['start']),
+        BotCommand(command="stop", description=msgs_cmd['stop'])
     ])
 
     # Start long polling

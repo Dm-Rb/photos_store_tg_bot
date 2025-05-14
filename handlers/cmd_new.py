@@ -9,8 +9,10 @@ from handlers.cmd_edit import EditDump
 from services.database import catalogs_db, files_db, users_db
 from text.messages import msg_cmd_cancel, msg_cmd_photos, msgs_process_title, \
     msg_process_description, msg_wrong_input_in_photos_state, msg_save_dump, msg_done
+from handlers.notifications import send_notification_all_users
 import os
 from pathlib import Path
+import datetime
 
 
 router = Router()
@@ -128,6 +130,7 @@ async def cmd_save_4_new(message: Message, state: FSMContext):
     data = await state.get_data()
     title = data.get("title", None)
     if not title:
+        await state.clear()
         return
     description = data.get("description", None)
     media_id_lst = data.get("media_id_lst", [])
@@ -141,12 +144,14 @@ async def cmd_save_4_new(message: Message, state: FSMContext):
                       'description': "© " + description if description else None,
                       'media_groups': media_groups
                       }
-    dump_id = catalogs_db.insert(result_message['title'], result_message['description'])
+    datetime_record = datetime.datetime.now().replace(microsecond=0)
+    dump_id = catalogs_db.insert(result_message['title'], result_message['description'], datetime_record)
     # Iterating through the array and writing items to the database
     for photo_item in result_message['media_groups']:
         files_db.insert(photo_item['file_name'], photo_item['file_id'], dump_id)
     await message.answer(msg_done, reply_markup=ReplyKeyboardRemove())
     await state.clear()
+    await send_notification_all_users(notification_type='new', catalog_tittle=title, user_id_ignore=message.from_user.id)
 
 
 @router.message(NewDump.waiting_for_mediafiles)

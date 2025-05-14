@@ -44,5 +44,4 @@ async def build_dumps_keyboard_with_pagination(page: int = 0, edit=False) -> Inl
     builder.adjust(1)  # По одному элементу в строке
     if navigation_buttons:  # Добавляем навигацию только если есть кнопки
         builder.row(*navigation_buttons)
-
     return builder.as_markup()
