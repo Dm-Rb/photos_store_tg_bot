@@ -76,9 +76,9 @@ msg_notifications = {
 }
 def msg_notification(title, type_):
     if type_ == "edit":
-        text = f"Каталог <b>{title}</b> быў абноўлены\n/show - пазлядзець"
+        text = f"Каталог <b>{title}</b> быў абноўлены\n/show - паглядзець"
     elif type_ == "new":
-        text = f"Створаны новы каталог <b>{title}</b>\n/show - пазлядзець"
+        text = f"Створаны новы каталог <b>{title}</b>\n/show - паглядзець"
     else:
         text = ''
     return text

@@ -96,7 +96,7 @@ async def process_mediafiles(message: Message, state: FSMContext):
     elif message.video:
         # Processing video
         media = message.video
-        file_ext = message.video.mime_type.split("/")[-1]
+        file_ext = message.video.file_name.split(".")[-1]
         file_name_start = 'video'
     else:
         return

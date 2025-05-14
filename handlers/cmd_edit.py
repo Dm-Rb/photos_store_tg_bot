@@ -51,6 +51,9 @@ async def add_description(message: Message, state: FSMContext):
 
     data = await state.get_data()
     dump_id = data.get("dump_id", None)
+    message_text = message.text
+    if not message_text:
+        return
     text = f"© {message.text.strip()}"
     await catalogs_db.update_description_by_id(dump_id, text)
     await state.clear()
@@ -59,9 +62,11 @@ async def add_description(message: Message, state: FSMContext):
         parse_mode="HTML",
     )
     # Search <tittle>  of catalog by <id> from <catalogs_db.cache_list>
+    print(dump_id)
+    print(catalogs_db.cache_list)
     result = [item['tittle'] for item in catalogs_db.cache_list if item['id'] == dump_id]
     title = result[0] if result else None
-    await send_notification_all_users(notification_type='new', catalog_tittle=title, user_id_ignore=message.from_user.id)
+    await send_notification_all_users(message.bot, notification_type='edit', catalog_tittle=title, user_id_ignore=message.from_user.id)
     # Updating a datetime cell value in the database
     datetime_record = datetime.datetime.now().replace(microsecond=0)
     await catalogs_db.update_datetime_by_id(id_=dump_id, datetime=datetime_record)
