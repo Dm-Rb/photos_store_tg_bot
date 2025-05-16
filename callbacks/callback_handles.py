@@ -3,7 +3,7 @@ from handlers.cmd_show import PaginationState
 from keyboards.catalog_kb import build_dumps_keyboard_with_pagination
 import keyboards.keyboards as kb
 from services.database import catalogs_db, files_db
-from text.messages import msg_handle_item_selection, msg_process_description, msgs_process_title
+from text.messages import msg_handle_item_selection, msg_process_description, msgs_process_title, msg_del_dump_confirm
 from handlers.cmd_edit import EditDump
 from aiogram.fsm.context import FSMContext
 
@@ -77,7 +77,7 @@ async def handle_edit_dump(callback: types.CallbackQuery):
 
 
 @router.callback_query(F.data.startswith("descr_edit"))
-async def handle_edit_description(callback: types.CallbackQuery, state: FSMContext):
+async def handle_add_description(callback: types.CallbackQuery, state: FSMContext):
     """Edit description"""
 
     dump_id = callback.data.split(":")[1]
@@ -88,7 +88,7 @@ async def handle_edit_description(callback: types.CallbackQuery, state: FSMConte
 
 
 @router.callback_query(F.data.startswith("file_edit"))
-async def handle_edit_photos(callback: types.CallbackQuery, state: FSMContext):
+async def handle_add_photos(callback: types.CallbackQuery, state: FSMContext):
     """Edit files"""
 
     dump_id = callback.data.split(":")[1]
@@ -96,3 +96,13 @@ async def handle_edit_photos(callback: types.CallbackQuery, state: FSMContext):
     await state.update_data(dump_id=dump_id, media_id_lst=[], file_names_lst=[])
     await callback.answer()
     await callback.message.answer(text=msg_process_description, parse_mode="HTML", reply_markup=await kb.save_cancel_kb())
+
+@router.callback_query(F.data.startswith("del_dump"))
+async def handle_delete_category(callback: types.CallbackQuery, state: FSMContext):
+    """Delete category from database"""
+
+    dump_id = callback.data.split(":")[1]
+    await state.set_state(EditDump.delete_catalog)
+    await state.update_data(dump_id=dump_id)
+    await callback.answer()
+    await callback.message.answer(text=msg_del_dump_confirm, parse_mode="HTML", reply_markup=await kb.save_cancel_kb())

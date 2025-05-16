@@ -4,7 +4,7 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from keyboards.catalog_kb import build_dumps_keyboard_with_pagination
-from text.messages import msg_cmd_edit, msg_wrong_input_in_photos_state, msg_done
+from text.messages import msg_cmd_edit, msg_wrong_input_in_photos_state, msg_done, msg_notification
 from services.database import catalogs_db, users_db, files_db
 from pathlib import Path
 from handlers.notifications import send_notification_all_users
@@ -23,6 +23,7 @@ class PaginationState(StatesGroup):
 class EditDump(StatesGroup):
     waiting_for_description = State()  # FSM for description
     waiting_for_mediafiles = State()  # FSM  for files
+    delete_catalog = State()
 
 
 @router.message(Command("edit"))
@@ -62,11 +63,11 @@ async def add_description(message: Message, state: FSMContext):
         parse_mode="HTML",
     )
     # Search <tittle>  of catalog by <id> from <catalogs_db.cache_list>
-    print(dump_id)
-    print(catalogs_db.cache_list)
     result = [item['tittle'] for item in catalogs_db.cache_list if item['id'] == dump_id]
     title = result[0] if result else None
-    await send_notification_all_users(message.bot, notification_type='edit', catalog_tittle=title, user_id_ignore=message.from_user.id)
+    bot = message.bot
+    msg_text = msg_notification(title=title, type_='edit')
+    await send_notification_all_users(bot, msg_text, user_ignore=message.from_user.id)
     # Updating a datetime cell value in the database
     datetime_record = datetime.datetime.now().replace(microsecond=0)
     await catalogs_db.update_datetime_by_id(id_=dump_id, datetime=datetime_record)
@@ -94,9 +95,19 @@ async def handle_cmd_save_4_editdump(message: Message, state: FSMContext):
     await catalogs_db.update_datetime_by_id(id_=dump_id, datetime=datetime_record)
 
 
-
 @router.message(EditDump.waiting_for_mediafiles)
 async def wrong_input_in_photos_state(message: Message):
     """Handler for sending response when user provides invalid media data type"""
 
     await message.answer(text=msg_wrong_input_in_photos_state)
+
+@router.message(EditDump.delete_catalog, Command("save"))
+async def delete_catalog(message: Message, state: FSMContext):
+    """Handler for sending response when user provides invalid media data type"""
+    data = await state.get_data()
+    dump_id = data.get("dump_id", None)
+    await catalogs_db.delete_row_by_id(dump_id)
+    await files_db.delete_rows_by_catalog_id(dump_id)
+    await message.answer(msg_done, reply_markup=ReplyKeyboardRemove())
+    await state.clear()
+

@@ -13,7 +13,7 @@ class DataBase:
         self.db_path.touch(exist_ok=True)  # Создаёт файл, если его нет
         self.__create_table__users()
         self.__create_table__catalogs()
-        self.__create_table__photos()
+        self.__create_table__files()
 
     def __create_table__users(self):
         """
@@ -47,11 +47,11 @@ class DataBase:
             )
             conn.commit()
 
-    def __create_table__photos(self):
+    def __create_table__files(self):
         with sqlite3.connect(self.db_path) as conn:
             conn.execute(
                 f'''
-                CREATE TABLE IF NOT EXISTS photos (
+                CREATE TABLE IF NOT EXISTS files (
                     file_name TEXT NOT NULL,                    
                     telegram_file_id INTEGER,                    
                     catalog_id INTEGER
@@ -172,6 +172,19 @@ class Catalogs(DataBase):
             await conn.commit()
         self.cache_list: list = self.get_catalogs_cache()
 
+    async def delete_row_by_id(self, id_):
+        async with aiosqlite.connect(self.db_path) as conn:
+            await conn.execute(
+                'DELETE FROM catalogs WHERE id=?',
+                (id_,)
+            )
+            # Delete from self.cache_list
+            for i, item in enumerate(self.cache_list):
+                if int(item["id"]) == int(id_):
+                    self.cache_list.pop(i)
+                    break
+            await conn.commit()
+
 
 class PhotoFiles(DataBase):
     def __init__(self, db_path="data.db"):
@@ -180,7 +193,7 @@ class PhotoFiles(DataBase):
     async def insert(self, file_name, telegram_file_id, catalog_id):
         async with aiosqlite.connect(self.db_path) as conn:
             await conn.execute(
-                'INSERT INTO photos (file_name, telegram_file_id, catalog_id) VALUES(?, ?, ?)',
+                'INSERT INTO files (file_name, telegram_file_id, catalog_id) VALUES(?, ?, ?)',
                 (file_name, telegram_file_id, catalog_id)
             )
             await conn.commit()
@@ -188,7 +201,7 @@ class PhotoFiles(DataBase):
     async def select_rows_by_id(self, catalog_id):
         async with aiosqlite.connect(self.db_path) as conn:
             async with conn.execute(
-                    'SELECT * FROM photos WHERE catalog_id = ?',
+                    'SELECT * FROM files WHERE catalog_id = ?',
                     (catalog_id,)
             ) as cursor:
                 response = await cursor.fetchall()
@@ -196,6 +209,13 @@ class PhotoFiles(DataBase):
             return [{'file_name': item[0], 'telegram_file_id': item[1]} for item in response]
         return response
 
+    async def delete_rows_by_catalog_id(self, catalog_id):
+        async with aiosqlite.connect(self.db_path) as conn:
+            await conn.execute(
+                'DELETE FROM files WHERE catalog_id=?',
+                (catalog_id,)
+            )
+            await conn.commit()
 
 
 users_db = Users()

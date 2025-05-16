@@ -60,8 +60,13 @@ msg_done = 'Зроблена ✅'
 
 msg_edit_keyboard = {
     'add_description': "➕ Дадаць новы каментар",
-    'add_files': '➕ Дадаць файлы'
+    'add_files': '➕ Дадаць файлы',
+    'del_dump': '➖ Выдалiць каталог'
 }
+
+msg_del_dump_confirm = "<b>Вы упэўнены, што хаціце выдаліць гэты каталог з усімі фотаздымкамі?\n</b>" +\
+                       "Так, выдаліць - /save\n" +\
+                       "Не, адменіць - /cancel"
 
 def msg_handle_item_selection(title, description):
     message = ""

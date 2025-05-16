@@ -9,7 +9,7 @@ from handlers.cmd_edit import EditDump
 from handlers.notifications import send_notification_all_users
 from services.database import catalogs_db, files_db, users_db
 from text.messages import msg_cmd_cancel, msg_cmd_photos, msgs_process_title, \
-    msg_process_description, msg_wrong_input_in_photos_state, msg_save_dump, msg_done
+    msg_process_description, msg_wrong_input_in_photos_state, msg_save_dump, msg_done, msg_notification
 import os
 from pathlib import Path
 import datetime
@@ -150,7 +150,9 @@ async def cmd_save_4_new(message: Message, state: FSMContext):
         await files_db.insert(photo_item['file_name'], photo_item['file_id'], dump_id)
     await message.answer(msg_done, reply_markup=ReplyKeyboardRemove())
     await state.clear()
-    await send_notification_all_users(notification_type='new', catalog_tittle=title, user_id_ignore=message.from_user.id)
+    bot = message.bot
+    msg_text = msg_notification(title=title, type_='new')
+    await send_notification_all_users(bot, msg_text=msg_text, user_ignore=message.from_user.id)
 
 
 @router.message(NewDump.waiting_for_mediafiles)
