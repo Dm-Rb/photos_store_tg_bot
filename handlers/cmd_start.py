@@ -1,7 +1,7 @@
 from aiogram import Router
 from aiogram.types import Message
 from services.database import users_db
-from config_file import config
+from config import config
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 from aiogram.filters import Command
@@ -73,5 +73,4 @@ async def process_password(message: Message, state: FSMContext):
     try:
         await message.answer(msgs_process_password['invalid_pass'] + str(remaining))
     except TypeError:
-        print('aasa')
         return

@@ -1,4 +1,4 @@
-from config_file import config
+from config import config
 import asyncio
 from aiogram import Bot, Dispatcher
 from aiogram.types import BotCommand
@@ -6,6 +6,7 @@ from handlers import cmd_start, cmd_new, cmd_show, cmd_edit, cmd_stop
 from middlewares.ban import BanMiddleware  # Импортируем наш middleware
 from callbacks import callback_handles
 from text.messages import msgs_cmd
+
 
 async def main():
     bot = Bot(token=config.BOT_TOKEN)

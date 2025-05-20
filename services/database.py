@@ -48,13 +48,15 @@ class DataBase:
             conn.commit()
 
     def __create_table__files(self):
+        # file_type - constanta. 1 - mediafile, 2 - document
         with sqlite3.connect(self.db_path) as conn:
             conn.execute(
                 f'''
                 CREATE TABLE IF NOT EXISTS files (
                     file_name TEXT NOT NULL,                    
-                    telegram_file_id INTEGER,                    
-                    catalog_id INTEGER
+                    telegram_file_id INTEGER,                                        
+                    catalog_id INTEGER,
+                    file_type INTEGER
                 )
                 '''
             )
@@ -201,7 +203,7 @@ class PhotoFiles(DataBase):
     async def select_rows_by_id(self, catalog_id):
         async with aiosqlite.connect(self.db_path) as conn:
             async with conn.execute(
-                    'SELECT * FROM files WHERE catalog_id = ?',
+                    'SELECT file_name, telegram_file_id FROM files WHERE catalog_id = ?',
                     (catalog_id,)
             ) as cursor:
                 response = await cursor.fetchall()
@@ -217,7 +219,19 @@ class PhotoFiles(DataBase):
             )
             await conn.commit()
 
+    def sync_select_catalogid_by_filename(self, file_name):
+        with sqlite3.connect(self.db_path) as conn:
+            r = conn.execute(
+                'SELECT catalog_id FROM files WHERE file_name = ?',
+                (file_name,)
+            ).fetchone()
+            if r:
+                return r[0]
+
+
+
 
 users_db = Users()
 catalogs_db = Catalogs()
 files_db = PhotoFiles()
+

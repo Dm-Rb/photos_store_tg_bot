@@ -6,14 +6,11 @@ from aiogram.fsm.state import State, StatesGroup
 from keyboards.catalog_kb import build_dumps_keyboard_with_pagination
 from text.messages import msg_cmd_edit, msg_wrong_input_in_photos_state, msg_done, msg_notification
 from services.database import catalogs_db, users_db, files_db
-from pathlib import Path
 from handlers.notifications import send_notification_all_users
 import datetime
 
 
 router = Router()
-FILES_DIR = 'files'  # Tmp-dir for photos, video and archives
-Path(FILES_DIR).mkdir(exist_ok=True)
 
 
 class PaginationState(StatesGroup):

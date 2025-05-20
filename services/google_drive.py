@@ -7,7 +7,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 from google.auth.transport.requests import Request
-
+from config import config
 
 class GoogleDriveUploader:
     """
@@ -93,18 +93,4 @@ class GoogleDriveUploader:
             return uploaded_ids
 
 
-
-if __name__ == '__main__':
-    # Укажи сюда ID нужной папки на Google Диске
-    folder_id = '1MZqp4Wdtc7uceqJMCGRP0VAAu7Ihaui1'
-
-    # Создаём загрузчик с указанием папки
-    uploader = GoogleDriveUploader(folder_id)
-
-    files = [
-        'files/photo_6267024993_AQAD9PQxG7ZgGEl-.jpg',
-        'files/photo_6267024993_AQADL_gxG7ZgIEl9.jpg',
-    ]
-
-    # Загружаем
-    asyncio.run(uploader.upload_files(files))
+uploader = GoogleDriveUploader(config.google_folder_id)

@@ -11,13 +11,11 @@ from services.database import catalogs_db, files_db, users_db
 from text.messages import msg_cmd_cancel, msg_cmd_photos, msgs_process_title, \
     msg_process_description, msg_wrong_input_in_photos_state, msg_save_dump, msg_done, msg_notification
 import os
-from pathlib import Path
 import datetime
+from config import FILES_DIR_UPLOAD
 
 
 router = Router()
-FILES_DIR = 'files'  # Tmp-dir for photos, video and archives
-Path(FILES_DIR).mkdir(exist_ok=True)
 
 
 class NewDump(StatesGroup):
@@ -103,7 +101,7 @@ async def process_mediafiles(message: Message, state: FSMContext):
         return
     # Create a unique file name
     file_name = f"{file_name_start}_{message.from_user.id}_{media.file_unique_id}.{file_ext}"
-    file_path = os.path.join(FILES_DIR, file_name)
+    file_path = os.path.join(FILES_DIR_UPLOAD, file_name)
 
     # Download file
     file = await message.bot.get_file(media.file_id)
