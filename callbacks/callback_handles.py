@@ -97,6 +97,7 @@ async def handle_add_photos(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
     await callback.message.answer(text=msg_process_description, parse_mode="HTML", reply_markup=await kb.save_cancel_kb())
 
+
 @router.callback_query(F.data.startswith("del_dump"))
 async def handle_delete_category(callback: types.CallbackQuery, state: FSMContext):
     """Delete category from database"""

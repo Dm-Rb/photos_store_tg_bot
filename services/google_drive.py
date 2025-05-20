@@ -92,5 +92,23 @@ class GoogleDriveUploader:
             uploaded_ids = await asyncio.gather(*tasks)
             return uploaded_ids
 
+    async def list_files(self) -> list[str]:
+        """
+        Асинхронно возвращает список имён файлов в папке self.folder_id на Google Drive.
+        """
 
-uploader = GoogleDriveUploader(config.google_folder_id)
+        def _list_files_sync():
+            query = f"'{self.folder_id}' in parents and trashed = false"
+            results = self.service.files().list(
+                q=query,
+                spaces='drive',
+                fields='files(name)',
+            ).execute()
+
+            files = results.get('files', [])
+            return [file['name'] for file in files]
+
+        return await asyncio.to_thread(_list_files_sync)
+
+
+google_drive = GoogleDriveUploader(config.google_folder_id)
