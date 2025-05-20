@@ -6,11 +6,18 @@ from handlers import cmd_start, cmd_new, cmd_show, cmd_edit, cmd_stop
 from middlewares.ban import BanMiddleware  # Импортируем наш middleware
 from callbacks import callback_handles
 from text.messages import msgs_cmd
+from backup_files import scheduled_backup
+
+
+async def on_startup(bot: Bot):
+    """Запуск бэкапа при старте бота"""
+    asyncio.create_task(scheduled_backup())
 
 
 async def main():
     bot = Bot(token=config.BOT_TOKEN)
     dp = Dispatcher()
+    dp.startup.register(on_startup)  # Запуск бэкапа при старте
 
     dp.include_router(cmd_start.router)
     dp.include_router(cmd_new.router)

@@ -219,15 +219,15 @@ class PhotoFiles(DataBase):
             )
             await conn.commit()
 
-    def sync_select_catalogid_by_filename(self, file_name):
-        with sqlite3.connect(self.db_path) as conn:
-            r = conn.execute(
+    async def select_catalogid_by_filename(self, file_name):
+        async with aiosqlite.connect(self.db_path) as conn:
+            async with conn.execute(
                 'SELECT catalog_id FROM files WHERE file_name = ?',
                 (file_name,)
-            ).fetchone()
-            if r:
-                return r[0]
-
+            ) as cursor:
+                response = await cursor.fetchone()
+        if response:
+            return response[0]
 
 
 
