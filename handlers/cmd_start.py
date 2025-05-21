@@ -22,7 +22,7 @@ Users flags:
 
 
 class AuthStates(StatesGroup):
-    waiting_for_password = State()  # Состояние ожидания пароля
+    waiting_for_password = State()  # Waiting for password
 
 
 @router.message(Command("start"))

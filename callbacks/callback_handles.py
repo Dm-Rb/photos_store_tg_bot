@@ -6,7 +6,10 @@ from services.database import catalogs_db, files_db
 from text.messages import msg_handle_item_selection, msg_process_description, msgs_process_title, msg_del_dump_confirm
 from handlers.cmd_edit import EditDump
 from aiogram.fsm.context import FSMContext
-
+from aiogram.exceptions import TelegramBadRequest
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
+from backup_files_controller import sync_get_archives_extract_files
 
 router = Router()
 
@@ -38,18 +41,30 @@ async def handle_page_change(callback: types.CallbackQuery, state: FSMContext):
 async def handle_show_dump(callback: types.CallbackQuery):
     """Processes inline keyboard callbacks for catalog navigation"""
 
-    dump_id = callback.data.split(":")[1]
-    _, title, description, _ = await catalogs_db.select_row_by_id(int(dump_id))
-    msg = msg_handle_item_selection(title, description)
+    dump_id = callback.data.split(":")[1]  # catalog id
+    _, title, description, _ = await catalogs_db.select_row_by_id(int(dump_id))  # get title and description grom db
+    msg = msg_handle_item_selection(title, description)  # generate message
     # Sending a text message with description of catalog
     await callback.message.answer(text=msg, parse_mode="HTML")
 
     # Sending media group
-    photos_list = await files_db.select_rows_by_id(dump_id)
+    mediafiles_list = await files_db.select_rows_by_id(dump_id)
+
+    """
+    "If Telegram deleted the files after some time and the file ID doesn't work—download the corresponding archive, 
+    extract the files, and send them to the user. This is the flag to enable this option."
+    """
+    flag = False  # init flag
+
+    """
+    The Telegram bot cannot send more than 10 files at once 
+    in a media group—this is a limitation of the service itself. 
+    Therefore, we send the files from the list in batches, splitting them across multiple messages.
+    """
     start_i = 0
     step = 10
-    for i in range(0, len(photos_list), 10):
-        items = photos_list[start_i: start_i + step]
+    for i in range(0, len(mediafiles_list), 10):
+        items = mediafiles_list[start_i: start_i + step]
         media_group = []
 
         for item in items:
@@ -60,9 +75,44 @@ async def handle_show_dump(callback: types.CallbackQuery):
             else:
                 continue
         start_i += step
-        await callback.message.answer_media_group(media=media_group)
+        try:
+            await callback.message.answer_media_group(media=media_group)
+        except Exception:
+            flag = True
+            break
+
+    # Download archives from Google Drive, extract files to RAM(io.Bytes)
+    if flag:
+
+        executor = ThreadPoolExecutor(max_workers=5)
+        loop = asyncio.get_running_loop()
+        mediafiles_list = await loop.run_in_executor(executor, sync_get_archives_extract_files, dump_id)
+        start_i = 0
+        step = 10
+        for i in range(0, len(mediafiles_list), 10):
+            items = mediafiles_list[start_i: start_i + step]
+            media_group = []
+            for item in items:
+                item['bytes'].seek(0)  # обязательно!
+                file = types.BufferedInputFile(file=item['bytes'].read(), filename=item['file_name'])
+                if item['file_name'].startswith('photo'):
+                        media_group.append(types.InputMediaPhoto(media=file))
+                elif item['file_name'].startswith('video'):
+                    media_group.append(types.InputMediaVideo(media=file))
+                else:
+                    continue
+            start_i += step
+            # Send files
+            msg = await callback.message.answer_media_group(media=media_group)
+            for indx, item in enumerate(msg):
+                await files_db.update_fileid_by_file_name(items[indx]['file_name'], item.photo[-1].file_id)
+
     # Confirm callback processing
-    await callback.answer()
+    try:
+        await callback.answer()
+        return
+    except TelegramBadRequest:
+        return
 
 
 @router.callback_query(PaginationState.viewing_list, F.data.startswith("edit"))
@@ -72,7 +122,9 @@ async def handle_edit_dump(callback: types.CallbackQuery):
     dump_id = callback.data.split(":")[1]
     _, title, _, _ = await catalogs_db.select_row_by_id(int(dump_id))
     # Build two buttons: add new description and add new files
-    await callback.message.answer(text=title, parse_mode="HTML", reply_markup=await kb.edit_keyboard(dump_id))
+    await callback.message.answer(text=title, parse_mode="HTML",
+                                  reply_markup=await kb.edit_keyboard(dump_id)
+                                  )
     await callback.answer()
 
 
@@ -84,7 +136,9 @@ async def handle_add_description(callback: types.CallbackQuery, state: FSMContex
     await state.set_state(EditDump.waiting_for_description)
     await state.update_data(dump_id=dump_id)
     await callback.answer()
-    await callback.message.answer(text=msgs_process_title['input_description'], parse_mode="HTML")
+    await callback.message.answer(text=msgs_process_title['input_description'],
+                                  parse_mode="HTML"
+                                  )
 
 
 @router.callback_query(F.data.startswith("file_edit"))
@@ -95,7 +149,10 @@ async def handle_add_photos(callback: types.CallbackQuery, state: FSMContext):
     await state.set_state(EditDump.waiting_for_mediafiles)
     await state.update_data(dump_id=dump_id, media_id_lst=[], file_names_lst=[])
     await callback.answer()
-    await callback.message.answer(text=msg_process_description, parse_mode="HTML", reply_markup=await kb.save_cancel_kb())
+    await callback.message.answer(text=msg_process_description,
+                                  parse_mode="HTML",
+                                  reply_markup=await kb.save_cancel_kb()
+                                  )
 
 
 @router.callback_query(F.data.startswith("del_dump"))
@@ -106,4 +163,7 @@ async def handle_delete_category(callback: types.CallbackQuery, state: FSMContex
     await state.set_state(EditDump.delete_catalog)
     await state.update_data(dump_id=dump_id)
     await callback.answer()
-    await callback.message.answer(text=msg_del_dump_confirm, parse_mode="HTML", reply_markup=await kb.save_cancel_kb())
+    await callback.message.answer(text=msg_del_dump_confirm,
+                                  parse_mode="HTML",
+                                  reply_markup=await kb.save_cancel_kb()
+                                  )

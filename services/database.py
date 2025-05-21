@@ -229,6 +229,15 @@ class PhotoFiles(DataBase):
         if response:
             return response[0]
 
+    async def update_fileid_by_file_name(self, file_name, file_id):
+        async with aiosqlite.connect(self.db_path) as conn:
+            async with conn.execute(
+                    'UPDATE files SET telegram_file_id=? WHERE file_name=?',
+                    (file_id, file_name)
+            ) as cursor:
+                if cursor.rowcount == 0:
+                    pass
+            await conn.commit()
 
 
 users_db = Users()

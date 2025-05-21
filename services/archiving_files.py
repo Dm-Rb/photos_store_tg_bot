@@ -1,13 +1,12 @@
 import os
 import asyncio
 import time
-from pathlib import Path
 from typing import Dict, List, Optional
-import aiofiles
 import pyzipper
 from slugify import slugify
 from config import FILES_DIR_UPLOAD, config
 from services.database import files_db, catalogs_db
+import io
 
 
 async def grouping_files(dir_path: str) -> Dict[int, List[str]]:
@@ -33,7 +32,6 @@ async def grouping_files(dir_path: str) -> Dict[int, List[str]]:
 async def create_encrypted_zip(file_list: List[str], password: str, archive_path: str) -> None:
     """
     Асинхронно создаёт AES-256 зашифрованный ZIP-архив.
-
     Использует отдельный поток для операций с файлами.
     """
     password_bytes = password.encode('utf-8')
@@ -104,3 +102,21 @@ async def archiving_files_main() -> Dict[str, List[str]]:
     ]
 
     return {"zip_file_list": zip_file_list, "files_list": files_list}
+
+
+def extract_zip_from_memory(zip_stream: io.BytesIO, password: str) -> list[dict]:
+    """
+    Извлекает файлы из зашифрованного ZIP-архива, переданного как io.BytesIO.
+    Возвращает словарь: {имя_файла: io.BytesIO}
+    """
+    # Сброс указателя на начало архива
+    zip_stream.seek(0)
+    result = []
+    with pyzipper.AESZipFile(zip_stream, 'r') as zf:
+        zf.setpassword(password.encode())
+
+        for file_name in zf.namelist():
+            if not file_name.endswith("/"):  # Пропускаем директории
+                file_bytes = zf.read(file_name)
+                result.append({'file_name': file_name, 'bytes': io.BytesIO(file_bytes)})
+    return result

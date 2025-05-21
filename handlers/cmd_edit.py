@@ -98,6 +98,7 @@ async def wrong_input_in_photos_state(message: Message):
 
     await message.answer(text=msg_wrong_input_in_photos_state)
 
+
 @router.message(EditDump.delete_catalog, Command("save"))
 async def delete_catalog(message: Message, state: FSMContext):
     """Handler for sending response when user provides invalid media data type"""

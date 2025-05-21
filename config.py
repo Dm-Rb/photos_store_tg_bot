@@ -18,5 +18,4 @@ config = Config()
 
 FILES_DIR_UPLOAD = 'files_upload'  # Tmp-dir for photos, video and archives
 Path(FILES_DIR_UPLOAD).mkdir(exist_ok=True)
-FILES_DIR_DOWNLOAD = 'files_download'
-Path(FILES_DIR_DOWNLOAD).mkdir(exist_ok=True)
+
