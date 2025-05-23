@@ -78,8 +78,8 @@ async def process_description(message: Message, state: FSMContext):
     await state.update_data(media_id_lst=[], file_names_lst=[])
 
 
-@router.message(EditDump.waiting_for_mediafiles, F.photo | F.video)
-@router.message(NewDump.waiting_for_mediafiles, F.photo | F.video)
+@router.message(EditDump.waiting_for_mediafiles, F.photo | F.video | F.document)
+@router.message(NewDump.waiting_for_mediafiles, F.photo | F.video | F.document)
 async def process_mediafiles(message: Message, state: FSMContext):
     """This handler intercepts a media file or media group (videos/images) sent by user.
        The files are downloaded locally to <FILES_DIR> and their data is stored to <state.data>"""
@@ -97,12 +97,17 @@ async def process_mediafiles(message: Message, state: FSMContext):
         media = message.video
         file_ext = message.video.file_name.split(".")[-1]
         file_name_start = 'video'
+    elif message.document:
+        # Processing video
+        print(message.document.file_name)
+        media = message.document
+        file_ext = media.file_name.split(".")[-1]
+        file_name_start = 'document'
     else:
         return
     # Create a unique file name
     file_name = f"{file_name_start}_{message.from_user.id}_{media.file_unique_id}.{file_ext}"
     file_path = os.path.join(FILES_DIR_UPLOAD, file_name)
-
     # Download file
     file = await message.bot.get_file(media.file_id)
     await message.bot.download_file(file.file_path, file_path)
@@ -114,7 +119,6 @@ async def process_mediafiles(message: Message, state: FSMContext):
 
     media_id_lst.append(media.file_id)
     file_names_lst.append(file_name)
-
     await state.update_data(media_id_lst=media_id_lst, file_names_lst=file_names_lst)
 
 
@@ -145,6 +149,7 @@ async def cmd_save_4_new(message: Message, state: FSMContext):
     dump_id = await catalogs_db.insert(result_message['title'], result_message['description'], datetime_record)
     # Iterating through the array and writing items to the database
     for photo_item in result_message['media_groups']:
+        print(photo_item)
         await files_db.insert(photo_item['file_name'], photo_item['file_id'], dump_id)
     await message.answer(msg_done, reply_markup=ReplyKeyboardRemove())
     await state.clear()

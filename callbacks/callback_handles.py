@@ -55,7 +55,7 @@ async def handle_show_dump(callback: types.CallbackQuery):
     extract the files, and send them to the user. This is the flag to enable this option."
     """
     flag = False  # init flag
-
+    document_files_list = []
     """
     The Telegram bot cannot send more than 10 files at once 
     in a media group—this is a limitation of the service itself. 
@@ -72,11 +72,15 @@ async def handle_show_dump(callback: types.CallbackQuery):
                 media_group.append(types.InputMediaPhoto(media=item['telegram_file_id']))
             elif item['file_name'].startswith('video'):
                 media_group.append(types.InputMediaVideo(media=item['telegram_file_id']))
+            elif item['file_name'].startswith('document'):
+                document_files_list.append(item['telegram_file_id'])
             else:
                 continue
         start_i += step
         try:
             await callback.message.answer_media_group(media=media_group)
+            if document_files_list:
+                await handle_send_document_type_files(callback, document_files_list)
         except Exception:
             flag = True
             break
@@ -89,6 +93,7 @@ async def handle_show_dump(callback: types.CallbackQuery):
         mediafiles_list = await loop.run_in_executor(executor, sync_get_archives_extract_files, dump_id)
         start_i = 0
         step = 10
+
         for i in range(0, len(mediafiles_list), 10):
             items = mediafiles_list[start_i: start_i + step]
             media_group = []
@@ -99,6 +104,8 @@ async def handle_show_dump(callback: types.CallbackQuery):
                         media_group.append(types.InputMediaPhoto(media=file))
                 elif item['file_name'].startswith('video'):
                     media_group.append(types.InputMediaVideo(media=file))
+                elif item['file_name'].startswith('document'):
+                    document_files_list.append(file)
                 else:
                     continue
             start_i += step
@@ -106,6 +113,8 @@ async def handle_show_dump(callback: types.CallbackQuery):
             msg = await callback.message.answer_media_group(media=media_group)
             for indx, item in enumerate(msg):
                 await files_db.update_fileid_by_file_name(items[indx]['file_name'], item.photo[-1].file_id)
+            if document_files_list:
+                await handle_send_document_type_files(callback, document_files_list)
 
     # Confirm callback processing
     try:
@@ -113,6 +122,21 @@ async def handle_show_dump(callback: types.CallbackQuery):
         return
     except TelegramBadRequest:
         return
+
+
+async def handle_send_document_type_files(callback: types.CallbackQuery, document_files_list: list):
+    start_i = 0
+    step = 10
+    for i in range(0, len(document_files_list), 10):
+        items = document_files_list[start_i: start_i + step]
+        media_group = []
+
+        for item in items:
+            media_group.append(types.InputMediaDocument(media=item))
+        start_i += step
+        await callback.message.answer_media_group(media=media_group)
+
+
 
 
 @router.callback_query(PaginationState.viewing_list, F.data.startswith("edit"))
