@@ -56,6 +56,10 @@ msg_cmd_edit = "<b>📝 Спіс дампаў для рэдактавання:</
 msg_cmd_stop = "Дадзеныя аб вышым акаунце выдалены. Вы больш не будзеце атрымліваць ніякіх паведамленняў ад бота."
 # !---cmd_stop---! END
 
+# !---cmd_help---!
+msg_help = '<a href="https://drive.google.com/drive/u/4/folders/1MZqp4Wdtc7uceqJMCGRP0VAAu7Ihaui1">Google Drive</a>'
+# !---cmd_help---! END
+
 msg_done = 'Зроблена ✅'
 
 msg_edit_keyboard = {

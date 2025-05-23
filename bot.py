@@ -2,7 +2,7 @@ from config import config
 import asyncio
 from aiogram import Bot, Dispatcher
 from aiogram.types import BotCommand
-from handlers import cmd_start, cmd_new, cmd_show, cmd_edit, cmd_stop
+from handlers import cmd_start, cmd_new, cmd_show, cmd_edit, cmd_stop, cmd_help
 from middlewares.ban import BanMiddleware  # Импортируем наш middleware
 from callbacks import callback_handles
 from text.messages import msgs_cmd
@@ -23,8 +23,10 @@ async def main():
     dp.include_router(cmd_new.router)
     dp.include_router(cmd_show.router)
     dp.include_router(cmd_edit.router)
+    dp.include_router(cmd_help.router)
     dp.include_router(callback_handles.router)
     dp.include_router(cmd_stop.router)
+
 
     dp.update.middleware(BanMiddleware())  # This connected middleware contains the logic for ignoring banned users
 
