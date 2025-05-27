@@ -7,6 +7,8 @@ from middlewares.ban import BanMiddleware  # Импортируем наш middl
 from callbacks import callback_handles
 from text.messages import msgs_cmd
 from backup_files_controller import scheduled_backup
+from aiogram.client.session.aiohttp import AiohttpSession
+from aiogram.client.telegram import TelegramAPIServer
 
 
 async def on_startup(bot: Bot):
@@ -15,6 +17,8 @@ async def on_startup(bot: Bot):
 
 
 async def main():
+    # session = AiohttpSession(api=TelegramAPIServer.from_base("http://localhost:8081", is_local=True))
+    # bot = Bot(token=config.BOT_TOKEN, session=session)
     bot = Bot(token=config.BOT_TOKEN)
     dp = Dispatcher()
     dp.startup.register(on_startup)  # Запуск бэкапа при старте
