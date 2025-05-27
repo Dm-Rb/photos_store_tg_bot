@@ -105,7 +105,8 @@ async def delete_catalog(message: Message, state: FSMContext):
     data = await state.get_data()
     dump_id = data.get("dump_id", None)
     await catalogs_db.delete_row_by_id(dump_id)
-    await files_db.delete_rows_by_catalog_id(dump_id)
+    files_array = await files_db.delete_rows_by_catalog_id(dump_id)
+    print(files_array)
     await message.answer(msg_done, reply_markup=ReplyKeyboardRemove())
     await state.clear()
 
