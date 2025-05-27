@@ -26,12 +26,14 @@ async def backup_to_gdrive():
     # Upload archives to Google Drive
     await google_drive.upload_files(result_dict['zip_file_list'])
     await google_drive_db.upload_files(['data.db'])
+
     # Delete zip files
-    for file_ in result_dict['zip_file_list']:
-        try:
-            os.remove(file_)
-        except Exception as e:
-            continue
+    if config.clear_local_disk_after_backup:
+        for file_ in result_dict['zip_file_list']:
+            try:
+                os.remove(file_)
+            except Exception as e:
+                continue
 
 
 async def scheduled_backup():
