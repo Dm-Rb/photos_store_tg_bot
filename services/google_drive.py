@@ -88,7 +88,7 @@ class GoogleDriveUploader:
         Асинхронная загрузка всех файлов в self.folder_id с таймаутом и ограничением потоков.
         """
         max_workers: int = 4
-        timeout: int = 6000
+        timeout: int = 3000
         loop = asyncio.get_event_loop()
         with ThreadPoolExecutor(max_workers=max_workers) as executor:  # Ограничиваем потоки
             tasks = []
