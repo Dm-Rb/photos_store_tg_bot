@@ -25,11 +25,6 @@ async def backup_to_gdrive():
     if result_dict.get('files_list', None):
         tasks = [delete_file(filename) for filename in result_dict['files_list']]
         await asyncio.gather(*tasks)
-        # for file_ in result_dict['files_list']:
-        #     try:
-        #         os.remove(file_)
-        #     except Exception as e:
-        #         continue
 
     # Delete zip files
     if config.clear_local_disk_after_backup:

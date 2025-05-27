@@ -11,7 +11,7 @@ class Config:
     PASSPHRASE = os.getenv("PASSPHRASE")
     google_folder_id = os.getenv("google_drive_folder_id")
     BACKUP_TIME = os.getenv("BACKUP_TIME")  # Время бэкапа (формат HH:MM)
-    clear_local_disk_after_backup = bool(os.getenv("clear_local_disk_after_backup"))
+    clear_local_disk_after_backup = int(os.getenv("clear_local_disk_after_backup"))
 
 
 # екземпляр конфигурации для импорта и использования
