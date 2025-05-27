@@ -110,6 +110,7 @@ async def process_mediafiles(message: Message, state: FSMContext):
     # Download file
     file = await message.bot.get_file(media.file_id)
     await message.bot.download_file(file.file_path, file_path)
+    await message.answer(text='✔️')
 
     # Update data in FSM
     data = await state.get_data()
