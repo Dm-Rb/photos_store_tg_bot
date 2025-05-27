@@ -19,5 +19,5 @@ config = Config()
 
 FILES_DIR_UPLOAD = 'files_upload'  # Tmp-dir for photos, video and archives
 Path(FILES_DIR_UPLOAD).mkdir(exist_ok=True)
-clear_local_disk_after_backup
+
 
