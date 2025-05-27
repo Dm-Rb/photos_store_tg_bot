@@ -1,5 +1,5 @@
 from services.archiving_files import archiving_files_main
-from services.google_drive import google_drive
+from services.google_drive import google_drive, google_drive_db
 import asyncio
 import os
 from config import config
@@ -17,7 +17,7 @@ async def backup_to_gdrive():
 
     # Upload archives to Google Drive
     await google_drive.upload_files(result_dict['zip_file_list'])
-
+    await google_drive_db.upload_files(['data.db'])
     # Delete zip files
     for file_ in result_dict['zip_file_list']:
         try:

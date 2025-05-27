@@ -22,7 +22,7 @@ class GoogleDriveUploader:
 
     def __init__(
         self,
-        folder_id: str,
+        folder_id: str = None,
         credentials_path: str = 'client_secret_google.json',
         token_path: str = 'token.json'
     ):
@@ -69,8 +69,9 @@ class GoogleDriveUploader:
 
         file_metadata = {
             'name': file_name,
-            'parents': [self.folder_id]  # Используем папку по умолчанию
         }
+        if self.folder_id:
+            file_metadata['parents'] = [self.folder_id]  # Используем папку по умолчанию
 
         media = MediaFileUpload(file_path, mimetype=mime_type)
 
@@ -154,3 +155,4 @@ class GoogleDriveUploader:
 
 
 google_drive = GoogleDriveUploader(config.google_folder_id)
+google_drive_db = GoogleDriveUploader()
