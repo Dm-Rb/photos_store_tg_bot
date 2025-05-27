@@ -9,7 +9,7 @@ msgs_cmd_start = {
 }
 
 msgs_process_password = {
-    'successful_auth': "👍 Пароль дакладны! Вы аўтарызаваны.",
+    'successful_auth': "👍 Пароль дакладны! Вы аўтарызаваны.\n\n/help - Што тут робіцца",
 
     'ban': "🔴 Перавышана колькасць спроб. Вы заблакаваны, больш вам тут няма чаго рабіць.",
 
@@ -56,9 +56,11 @@ msg_cmd_edit = "<b>📝 Спіс дампаў для рэдактавання:</
 msg_cmd_stop = "Дадзеныя аб вышым акаунце выдалены. Вы больш не будзеце атрымліваць ніякіх паведамленняў ад бота."
 # !---cmd_stop---! END
 
-# !---cmd_help---!
-msg_help = '<a href="https://drive.google.com/drive/u/4/folders/1MZqp4Wdtc7uceqJMCGRP0VAAu7Ihaui1">Google Drive</a>'
-# !---cmd_help---! END
+# # !---cmd_help---!
+# msg_help = '<a href="https://drive.google.com/drive/u/4/folders/1MZqp4Wdtc7uceqJMCGRP0VAAu7Ihaui1">Google Drive</a> - ' + \
+# "Сховішча архіваў с файламі\n\nСпіс камандаў:\n/show - " \
+# ""
+# # !---cmd_help---! END
 
 msg_done = 'Зроблена ✅'
 
@@ -80,9 +82,6 @@ def msg_handle_item_selection(title, description):
         message += "<blockquote>" + description.strip() + "</blockquote>" + "\n"
     return message
 
-msg_notifications = {
-    'edit': ""
-}
 def msg_notification(title, type_):
     if type_ == "edit":
         text = f"Каталог <b>{title}</b> быў абноўлены\n/show - паглядзець"
@@ -100,3 +99,12 @@ msgs_cmd = {
     'start': "Запусціць бота",
     'stop':  "Спыніць бота"
 }
+
+# !---cmd_help---!
+msg_help = 'У бот можна загружаць як відарысы, так і відэа\n' + \
+           '<a href="https://drive.google.com/drive/u/4/folders/1MZqp4Wdtc7uceqJMCGRP0VAAu7Ihaui1">Google Drive</a> - ' + \
+            f"<i>Сховішча архіваў з файламі</i>\n\n" + \
+            f"Спіс камандаў:\n/show - <i>{msgs_cmd['show']}</i>\n/new - <i>{msgs_cmd['new']}</i>\n" + \
+            f"/edit - <i>{msgs_cmd['edit']}</i>\n/stop - <i>{msgs_cmd['stop']} і разлогініцца</i>"
+""
+# !---cmd_help---! END

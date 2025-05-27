@@ -149,7 +149,6 @@ async def cmd_save_4_new(message: Message, state: FSMContext):
     dump_id = await catalogs_db.insert(result_message['title'], result_message['description'], datetime_record)
     # Iterating through the array and writing items to the database
     for photo_item in result_message['media_groups']:
-        print(photo_item)
         await files_db.insert(photo_item['file_name'], photo_item['file_id'], dump_id)
     await message.answer(msg_done, reply_markup=ReplyKeyboardRemove())
     await state.clear()

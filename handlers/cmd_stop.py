@@ -16,6 +16,6 @@ async def cmd_stop(messages: Message):
     if not users_db.cache.get(user_id, None):
         return
 
-    users_db.delete(user_id)
+    await users_db.delete(user_id)
     del users_db.cache[user_id]
     await messages.answer(text=msg_cmd_stop)

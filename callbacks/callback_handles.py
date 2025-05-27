@@ -11,6 +11,7 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from backup_files_controller import sync_get_archives_extract_files
 
+
 router = Router()
 
 
@@ -81,10 +82,12 @@ async def handle_show_dump(callback: types.CallbackQuery):
             await callback.message.answer_media_group(media=media_group)
             if document_files_list:
                 await handle_send_document_type_files(callback, document_files_list)
-        except Exception:
-            flag = True
-            break
-
+        except TelegramBadRequest as _ex:
+            if _ex == "Telegram server says - Bad Request: wrong remote file identifier specified: can't unserialize it. Wrong last symbol":
+                flag = True
+                break
+            else:
+                raise _ex
     # Download archives from Google Drive, extract files to RAM(io.Bytes)
     if flag:
 
