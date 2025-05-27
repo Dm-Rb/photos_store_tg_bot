@@ -6,9 +6,12 @@ from aiogram.fsm.state import State, StatesGroup
 from keyboards.catalog_kb import build_dumps_keyboard_with_pagination
 from text.messages import msg_cmd_edit, msg_wrong_input_in_photos_state, msg_done, msg_notification
 from services.database import catalogs_db, users_db, files_db
+from services.archiving_files import delete_file
 from handlers.notifications import send_notification_all_users
 import datetime
-
+import asyncio
+from config import FILES_DIR_UPLOAD
+from os.path import join as jn
 
 router = Router()
 
@@ -105,8 +108,11 @@ async def delete_catalog(message: Message, state: FSMContext):
     data = await state.get_data()
     dump_id = data.get("dump_id", None)
     await catalogs_db.delete_row_by_id(dump_id)
-    files_array = await files_db.delete_rows_by_catalog_id(dump_id)
-    print(files_array)
+    files_array = await files_db.select_rows_by_id(dump_id)
+    tasks = [delete_file(jn(FILES_DIR_UPLOAD, filename)) for filename in [i['file_name'] for i in files_array]]
+    await asyncio.gather(*tasks)
+
+    await files_db.delete_rows_by_catalog_id(dump_id)
     await message.answer(msg_done, reply_markup=ReplyKeyboardRemove())
     await state.clear()
 

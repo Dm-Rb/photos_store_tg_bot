@@ -6,6 +6,7 @@ import pyzipper
 from slugify import slugify
 from config import FILES_DIR_UPLOAD, config
 from services.database import files_db, catalogs_db
+import aiofiles.os as aio_os
 import io
 
 
@@ -120,3 +121,10 @@ def extract_zip_from_memory(zip_stream: io.BytesIO, password: str) -> list[dict]
                 file_bytes = zf.read(file_name)
                 result.append({'file_name': file_name, 'bytes': io.BytesIO(file_bytes)})
     return result
+
+
+async def delete_file(filename):
+    try:
+        await aio_os.remove(filename)
+    except Exception as e:
+        pass
