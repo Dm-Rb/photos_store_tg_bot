@@ -85,16 +85,28 @@ class GoogleDriveUploader:
 
     async def upload_files(self, file_paths: list[str]):
         """
-        Асинхронная загрузка всех файлов в self.folder_id.
+        Асинхронная загрузка всех файлов в self.folder_id с таймаутом и ограничением потоков.
         """
+        max_workers: int = 4
+        timeout: int = 6000
         loop = asyncio.get_event_loop()
-        with ThreadPoolExecutor() as executor:
-            tasks = [
-                loop.run_in_executor(executor, self._upload_file_sync, path)
-                for path in file_paths
-            ]
-            uploaded_ids = await asyncio.gather(*tasks)
-            return uploaded_ids
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:  # Ограничиваем потоки
+            tasks = []
+            for path in file_paths:
+                # Добавляем таймаут для каждой задачи
+                task = asyncio.wait_for(
+                    loop.run_in_executor(executor, self._upload_file_sync, path),
+                    timeout=timeout
+                )
+                tasks.append(task)
+
+            try:
+                uploaded_ids = await asyncio.gather(*tasks, return_exceptions=True)
+                # Фильтруем успешные загрузки
+                return [id_ for id_ in uploaded_ids if not isinstance(id_, Exception)]
+            except Exception as e:
+                print(f"Upload failed: {e}")
+                return []
 
     def _get_list_files_sync(self) -> list[dict]:
         """
