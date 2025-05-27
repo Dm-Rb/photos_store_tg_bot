@@ -5,7 +5,7 @@ import os
 from config import config
 from datetime import datetime
 from services.google_drive import GoogleDriveUploader
-from services.archiving_files import extract_zip_from_memory
+from services.archiving_files import extract_zip_from_memory, delete_file
 
 
 async def backup_to_gdrive():
@@ -15,17 +15,21 @@ async def backup_to_gdrive():
     if not result_dict:
         return
 
-    # Deleting remaining files (media)
-    if result_dict.get('files_list', None):
-        for file_ in result_dict['files_list']:
-            try:
-                os.remove(file_)
-            except Exception as e:
-                continue
+
 
     # Upload archives to Google Drive
     await google_drive.upload_files(result_dict['zip_file_list'])
     await google_drive_db.upload_files(['data.db'])
+
+    # Deleting remaining files (media)
+    if result_dict.get('files_list', None):
+        tasks = [delete_file(filename) for filename in result_dict['files_list']]
+        await asyncio.gather(*tasks)
+        # for file_ in result_dict['files_list']:
+        #     try:
+        #         os.remove(file_)
+        #     except Exception as e:
+        #         continue
 
     # Delete zip files
     if config.clear_local_disk_after_backup:
