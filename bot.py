@@ -12,7 +12,7 @@ from aiogram.client.telegram import TelegramAPIServer
 
 
 async def on_startup(bot: Bot):
-    """Запуск бэкапа при старте бота"""
+    """Start scheduled backup"""
     asyncio.create_task(scheduled_backup())
 
 
@@ -21,7 +21,7 @@ async def main():
     # bot = Bot(token=config.BOT_TOKEN, session=session)
     bot = Bot(token=config.BOT_TOKEN)
     dp = Dispatcher()
-    dp.startup.register(on_startup)  # Запуск бэкапа при старте
+    dp.startup.register(on_startup)  # Registration scheduled backup to dispatcher
 
     dp.include_router(cmd_start.router)
     dp.include_router(cmd_new.router)
@@ -30,7 +30,6 @@ async def main():
     dp.include_router(cmd_help.router)
     dp.include_router(callback_handles.router)
     dp.include_router(cmd_stop.router)
-
 
     dp.update.middleware(BanMiddleware())  # This connected middleware contains the logic for ignoring banned users
 

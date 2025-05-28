@@ -9,5 +9,5 @@ router = Router()
 
 @router.message(Command('help'))
 async def cmd_stop(messages: Message):
-    """Show information about"""
+    """Show information about bot"""
     await messages.answer(text=msg_help, parse_mode='HTML')
