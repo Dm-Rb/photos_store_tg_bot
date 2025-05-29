@@ -50,7 +50,8 @@ async def handle_show_dump(callback: types.CallbackQuery):
 
     # Sending media group
     mediafiles_list = await files_db.select_rows_by_id(dump_id)
-
+    # Arrange the list with image files first
+    mediafiles_list.sort(key=lambda x: not x.startswith("photo_"))
     """
     "If Telegram deleted the files after some time and the file ID doesn't work—download the corresponding archive, 
     extract the files, and send them to the user. This is the flag to enable this option."
@@ -94,6 +95,8 @@ async def handle_show_dump(callback: types.CallbackQuery):
         executor = ThreadPoolExecutor(max_workers=5)
         loop = asyncio.get_running_loop()
         mediafiles_list = await loop.run_in_executor(executor, sync_get_archives_extract_files, dump_id)
+        # Arrange the list with image files first
+        mediafiles_list.sort(key=lambda x: not x.startswith("photo_"))
         start_i = 0
         step = 10
 
@@ -138,8 +141,6 @@ async def handle_send_document_type_files(callback: types.CallbackQuery, documen
             media_group.append(types.InputMediaDocument(media=item))
         start_i += step
         await callback.message.answer_media_group(media=media_group)
-
-
 
 
 @router.callback_query(PaginationState.viewing_list, F.data.startswith("edit"))
