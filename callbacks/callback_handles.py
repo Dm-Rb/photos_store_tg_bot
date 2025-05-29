@@ -99,7 +99,6 @@ async def handle_show_dump(callback: types.CallbackQuery):
         executor = ThreadPoolExecutor(max_workers=5)
         loop = asyncio.get_running_loop()
         mediafiles_list = await loop.run_in_executor(executor, sync_get_archives_extract_files, dump_id)
-        print(mediafiles_list)
         # Arrange the list with image files first
         mediafiles_list.sort(key=lambda x: not x['file_name'].startswith("photo_"))
         start_i = 0
