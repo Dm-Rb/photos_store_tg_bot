@@ -51,7 +51,7 @@ async def handle_show_dump(callback: types.CallbackQuery):
     # Sending media group
     mediafiles_list = await files_db.select_rows_by_id(dump_id)
     # Arrange the list with image files first
-    mediafiles_list.sort(key=lambda x: not x.startswith("photo_"))
+    mediafiles_list.sort(key=lambda x: not x['file_name'].startswith("photo_"))
     """
     "If Telegram deleted the files after some time and the file ID doesn't work—download the corresponding archive, 
     extract the files, and send them to the user. This is the flag to enable this option."
@@ -84,19 +84,24 @@ async def handle_show_dump(callback: types.CallbackQuery):
             if document_files_list:
                 await handle_send_document_type_files(callback, document_files_list)
         except TelegramBadRequest as _ex:
-            if _ex == "Telegram server says - Bad Request: wrong remote file identifier specified: can't unserialize it. Wrong last symbol":
+
+            if 'file identifier' in str(_ex):
                 flag = True
                 break
             else:
                 raise _ex
     # Download archives from Google Drive, extract files to RAM(io.Bytes)
     if flag:
+        await callback.message.answer(
+            text="Please wait a while the files are being downloaded from storage and decrypted.\n🕑 It may take a few minutes..."
+        )
 
         executor = ThreadPoolExecutor(max_workers=5)
         loop = asyncio.get_running_loop()
         mediafiles_list = await loop.run_in_executor(executor, sync_get_archives_extract_files, dump_id)
+        print(mediafiles_list)
         # Arrange the list with image files first
-        mediafiles_list.sort(key=lambda x: not x.startswith("photo_"))
+        mediafiles_list.sort(key=lambda x: not x['file_name'].startswith("photo_"))
         start_i = 0
         step = 10
 
