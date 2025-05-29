@@ -93,7 +93,8 @@ async def handle_show_dump(callback: types.CallbackQuery):
     # Download archives from Google Drive, extract files to RAM(io.Bytes)
     if flag:
         await callback.message.answer(
-            text="Please wait a while the files are being downloaded from storage and decrypted.\n🕑 It may take a few minutes..."
+            text="Please wait a while the files are being downloaded from storage and decrypted.\n" +\
+                 "🕑 It may take a few minutes..."
         )
 
         executor = ThreadPoolExecutor(max_workers=5)
@@ -101,6 +102,7 @@ async def handle_show_dump(callback: types.CallbackQuery):
         mediafiles_list = await loop.run_in_executor(executor, sync_get_archives_extract_files, dump_id)
         # Arrange the list with image files first
         mediafiles_list.sort(key=lambda x: not x['file_name'].startswith("photo_"))
+
         start_i = 0
         step = 10
 
@@ -108,7 +110,7 @@ async def handle_show_dump(callback: types.CallbackQuery):
             items = mediafiles_list[start_i: start_i + step]
             media_group = []
             for item in items:
-                item['bytes'].seek(0)  # обязательно!
+                item['bytes'].seek(0)  # Moving the cursor to the beginning
                 file = types.BufferedInputFile(file=item['bytes'].read(), filename=item['file_name'])
                 if item['file_name'].startswith('photo'):
                         media_group.append(types.InputMediaPhoto(media=file))
@@ -135,6 +137,7 @@ async def handle_show_dump(callback: types.CallbackQuery):
 
 
 async def handle_send_document_type_files(callback: types.CallbackQuery, document_files_list: list):
+    """An auxiliary handler called from <handle_show_dump>, which uploads files as 'Documents' """
     start_i = 0
     step = 10
     for i in range(0, len(document_files_list), 10):
