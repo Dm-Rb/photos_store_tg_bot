@@ -107,10 +107,6 @@ async def process_mediafiles(message: Message, state: FSMContext):
     # Create a unique file name
     file_name = f"{file_name_start}_{message.from_user.id}_{media.file_unique_id}.{file_ext}"
     file_path = os.path.join(FILES_DIR_UPLOAD, file_name)
-    # Download file
-    file = await message.bot.get_file(media.file_id)
-    await message.bot.download_file(file.file_path, file_path)
-
     # Update data in FSM
     data = await state.get_data()
     media_id_lst = data.get("media_id_lst", [])
@@ -119,6 +115,9 @@ async def process_mediafiles(message: Message, state: FSMContext):
     media_id_lst.append(media.file_id)
     file_names_lst.append(file_name)
     await state.update_data(media_id_lst=media_id_lst, file_names_lst=file_names_lst)
+    # Download file
+    file = await message.bot.get_file(media.file_id)
+    await message.bot.download_file(file.file_path, file_path)
 
 
 @router.message(NewDump.waiting_for_mediafiles, Command("save"))
@@ -135,8 +134,13 @@ async def cmd_save_4_new(message: Message, state: FSMContext):
     description = data.get("description", None)
     media_id_lst = data.get("media_id_lst", [])
     file_names_lst = data.get("file_names_lst", [])
+
     if not media_id_lst:
         await message.answer(text=msg_save_dump, parse_mode='HTML')
+        return
+    # Before saving need to check whether the files have been completely downloaded to your local disk
+    if not all(map(lambda x: x in os.listdir(FILES_DIR_UPLOAD), file_names_lst)):
+        await message.answer(text='The files were not fully downloaded to disk. Please wait a few seconds and send /save')
         return
     # Compiling an array for processing and database persistence
     media_groups = [{'file_id': file_id, 'file_name': file_name} for file_id, file_name in zip(media_id_lst, file_names_lst)]

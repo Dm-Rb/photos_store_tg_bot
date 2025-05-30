@@ -11,8 +11,7 @@ from handlers.notifications import send_notification_all_users
 import datetime
 import asyncio
 from config import FILES_DIR_UPLOAD
-from os.path import join as jn
-
+import os
 
 router = Router()
 
@@ -85,6 +84,11 @@ async def handle_cmd_save_4_editdump(message: Message, state: FSMContext):
     media_id_lst = data.get("media_id_lst", [])
     file_names_lst = data.get("file_names_lst", [])
 
+    # Before saving need to check whether the files have been completely downloaded to your local disk
+    if not all(map(lambda x: x in os.listdir(FILES_DIR_UPLOAD), file_names_lst)):
+        await message.answer(text='The files were not fully downloaded to disk. Please wait a few seconds and send /save')
+        return
+
     # Iterating through the array and writing items to the database
     for media_id, file_name in zip(media_id_lst, file_names_lst):
         await files_db.insert(file_name, media_id, dump_id)
@@ -110,10 +114,9 @@ async def delete_catalog(message: Message, state: FSMContext):
     dump_id = data.get("dump_id", None)
     await catalogs_db.delete_row_by_id(dump_id)
     files_array = await files_db.select_rows_by_id(dump_id)
-    tasks = [delete_file(jn(FILES_DIR_UPLOAD, filename)) for filename in [i['file_name'] for i in files_array]]
+    tasks = [delete_file(os.path.join(FILES_DIR_UPLOAD, filename)) for filename in [i['file_name'] for i in files_array]]
     await asyncio.gather(*tasks)
 
     await files_db.delete_rows_by_catalog_id(dump_id)
     await message.answer(msg_done, reply_markup=ReplyKeyboardRemove())
     await state.clear()
-
