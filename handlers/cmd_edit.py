@@ -63,13 +63,6 @@ async def add_description(message: Message, state: FSMContext):
         text=msg_done,
         parse_mode="HTML",
     )
-    # Search <tittle>  of catalog by <id> from <catalogs_db.cache_list>
-    # Send notification for users
-    result = [item['title'] for item in catalogs_db.cache_list if item['id'] == int(dump_id)]
-    title = result[0] if result else None
-    bot = message.bot
-    msg_text = msg_notification(title=title, type_='edit')
-    await send_notification_all_users(bot, msg_text, user_ignore=message.from_user.id)
 
     # Updating a datetime cell value in the database
     datetime_record = datetime.datetime.now().replace(microsecond=0)
