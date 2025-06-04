@@ -34,7 +34,6 @@ Why Use This Bot?
 - Privacy-first – Encrypted backups and password protection ensure only your group has access.
 
 <b>.env file content:</b>
-You will also need a "credentials.json" file, which must be generated in your Google Console if you plan to use Google Drive for file backups.
 
 ````
 BOT_TOKEN=your_telegram_bot_token
@@ -45,6 +44,7 @@ google_drive_folder_id=1MZqp4Wdt1237Ihaui1  # Specific GD folder ID or None/Fals
 backup_files_on_google_drive=1           # 1=enable, 0=disable GD backups
 clear_local_disk_after_backup=0          # 1=delete local files after backup, 0=leave all files in temporary directory
 ````
+You will also need a "credentials.json" file, which must be generated in your Google Console if you plan to use Google Drive for file backups.
 
 ![1](https://github.com/user-attachments/assets/22165a7d-d3d7-41b3-a784-c794ce0ccb1e)
 ![2](https://github.com/user-attachments/assets/e1ae9c92-ef1f-4568-9f58-d4397e0ca1fd)
