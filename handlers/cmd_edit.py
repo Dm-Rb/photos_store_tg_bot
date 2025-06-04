@@ -107,8 +107,6 @@ async def handle_cmd_save_4_editdump(message: Message, state: FSMContext):
     await catalogs_db.update_datetime_by_id(id_=dump_id, datetime=datetime_record)
 
 
-
-
 @router.message(EditDump.waiting_for_mediafiles)
 async def wrong_input_in_photos_state(message: Message):
     """Handler for sending response when user provides invalid media data type"""

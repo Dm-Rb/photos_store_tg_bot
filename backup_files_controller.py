@@ -18,8 +18,8 @@ async def backup_to_gdrive():
 
     # Upload archives to Google Drive
     if result_dict['zip_file_list']:
-        await google_drive.upload_files(result_dict['zip_file_list'])
-        await google_drive_db.upload_files(['data.db'])
+        await google_drive.upload_files(result_dict['zip_file_list'], True)  # archives to folder of GD
+        await google_drive.upload_files(['data.db'], False)  # database file to root of GD
 
     # Deleting remaining files (media)
     if result_dict.get('files_list', None):
