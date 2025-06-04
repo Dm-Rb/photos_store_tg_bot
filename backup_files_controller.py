@@ -56,6 +56,4 @@ def sync_get_archives_extract_files(catalog_id):
 
     return mediafile_list
 
-##
-files = [os.path.join('files_upload', i) for i in ['10_asipavichy-2025-d-r-lva-1748641823.zip', '11_ontoshin-den-2025-1748814615.zip']]
 
