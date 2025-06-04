@@ -48,5 +48,6 @@ clear_local_disk_after_backup=0          # 1=delete local files after backup, 0=
 
 ![1](https://github.com/user-attachments/assets/22165a7d-d3d7-41b3-a784-c794ce0ccb1e)
 ![2](https://github.com/user-attachments/assets/e1ae9c92-ef1f-4568-9f58-d4397e0ca1fd)
-![3](https://github.com/user-attachments/assets/8d729420-a6d2-4471-abed-79a980077d1e)
+![4](https://github.com/user-attachments/assets/d622ba6b-b57a-4c0d-8f60-078c4ff2292c)
+
 
