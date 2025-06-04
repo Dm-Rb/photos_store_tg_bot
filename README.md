@@ -1,5 +1,6 @@
-Telegram Media Archive Bot
-Project Description
+![1](https://github.com/user-attachments/assets/e2e3c6bb-161d-427d-b903-325a57ccbef8)
+![2](https://github.com/user-attachments/assets/a7a59af4-946d-4ee7-a999-68d4d2d932cf)
+![3](https://github.com/user-attachments/assets/ee920a63-3b1c-44b4-8e9d-b6f684b37b8f)
 
 This project is a Telegram bot designed to serve as a centralized storage for photos and videos with built-in cataloging functionality.
 Problem Statement
