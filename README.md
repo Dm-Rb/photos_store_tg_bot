@@ -1,7 +1,3 @@
-![1](https://github.com/user-attachments/assets/e2e3c6bb-161d-427d-b903-325a57ccbef8)
-![2](https://github.com/user-attachments/assets/a7a59af4-946d-4ee7-a999-68d4d2d932cf)
-![3](https://github.com/user-attachments/assets/ee920a63-3b1c-44b4-8e9d-b6f684b37b8f)
-
 This project is a Telegram bot designed to serve as a centralized storage for photos and videos with built-in cataloging functionality.
 Problem Statement
 
@@ -46,3 +42,8 @@ BACKUP_TIME=23:57                        # Daily backup time (UTC)
 google_drive_folder_id=1MZqp4Wdt1237Ihaui1  # Specific GD folder ID or None/False if storing files in GD root
 backup_files_on_google_drive=1           # 1=enable, 0=disable GD backups
 clear_local_disk_after_backup=0          # 1=delete local files after backup, 0=leave all files in temporary directory````
+
+![1](https://github.com/user-attachments/assets/22165a7d-d3d7-41b3-a784-c794ce0ccb1e)
+![2](https://github.com/user-attachments/assets/e1ae9c92-ef1f-4568-9f58-d4397e0ca1fd)
+![3](https://github.com/user-attachments/assets/8d729420-a6d2-4471-abed-79a980077d1e)
+
