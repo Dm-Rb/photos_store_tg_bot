@@ -12,7 +12,7 @@ from text.messages import msg_cmd_cancel, msg_cmd_photos, msgs_process_title, \
     msg_process_description, msg_wrong_input_in_photos_state, msg_save_dump, msg_done, msg_notification
 import os
 import datetime
-from config import FILES_DIR_UPLOAD
+from config import config
 
 
 router = Router()
@@ -106,7 +106,7 @@ async def process_mediafiles(message: Message, state: FSMContext):
         return
     # Create a unique file name
     file_name = f"{file_name_start}_{message.from_user.id}_{media.file_unique_id}.{file_ext}"
-    file_path = os.path.join(FILES_DIR_UPLOAD, file_name)
+    file_path = os.path.join(config.FILES_DIR_UPLOAD, file_name)
     # Update data in FSM
     data = await state.get_data()
     media_id_lst = data.get("media_id_lst", [])
@@ -139,7 +139,7 @@ async def cmd_save_4_new(message: Message, state: FSMContext):
         await message.answer(text=msg_save_dump, parse_mode='HTML')
         return
     # Before saving need to check whether the files have been completely downloaded to your local disk
-    if not all(map(lambda x: x in os.listdir(FILES_DIR_UPLOAD), file_names_lst)):
+    if not all(map(lambda x: x in os.listdir(config.FILES_DIR_UPLOAD), file_names_lst)):
         await message.answer(text='The files were not fully downloaded to disk. Please wait a few seconds and send /save')
         return
     # Compiling an array for processing and database persistence

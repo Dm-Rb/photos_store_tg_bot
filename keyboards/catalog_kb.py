@@ -4,18 +4,18 @@ from services.database import catalogs_db
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 
-ITEMS_PER_PAGE = 10  # Keyboard button limit
+ITEMS_PER_PAGE = 10  # Keyboard button limit on "page"
 
 
 async def build_dumps_keyboard_with_pagination(page: int = 0, edit=False) -> InlineKeyboardMarkup:
-    """Строит клавиатуру с пагинацией"""
+    """Build inline keyboard with pagination"""
     start_idx = page * ITEMS_PER_PAGE
     end_idx = start_idx + ITEMS_PER_PAGE
     current_page_items = catalogs_db.cache_list[start_idx:end_idx]
 
     builder = InlineKeyboardBuilder()
 
-    # Добавляем кнопки элементов
+    # Add buttons
     for item in current_page_items:
         button_name = f"🗂 {item['title']}"
         if len(button_name) > 40:
@@ -25,23 +25,22 @@ async def build_dumps_keyboard_with_pagination(page: int = 0, edit=False) -> Inl
         else:
             builder.button(text=button_name, callback_data=f"show:{str(item['id'])}")
 
-    # Добавляем кнопки навигации
     navigation_buttons = []
 
-    # Кнопка "Назад" (если не на первой странице)
+    # Button "Back" (if current page not first)
     if page > 0:
         navigation_buttons.append(
             types.InlineKeyboardButton(text="⬅️ Назад", callback_data="prev_page")
         )
 
-    # Кнопка "Вперёд" (если не на последней странице)
+    # Button "Next" (if current page not last)
     if end_idx < len(catalogs_db.cache_list):
         navigation_buttons.append(
             types.InlineKeyboardButton(text="Далей ➡️", callback_data="next_page")
         )
 
-    # Располагаем элементы
-    builder.adjust(1)  # По одному элементу в строке
-    if navigation_buttons:  # Добавляем навигацию только если есть кнопки
+    # Arrange elements
+    builder.adjust(1)  # One element per row
+    if navigation_buttons:
         builder.row(*navigation_buttons)
     return builder.as_markup()

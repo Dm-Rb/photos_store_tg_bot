@@ -6,8 +6,8 @@ from services.database import users_db
 
 class BanMiddleware(BaseMiddleware):
     """
-    Middleware для блокировки пользователей из бан-листа.
-    Если пользователь имеет флаг 4 — его сообщения игнорируются.
+    Middleware for blocking users from a ban list.
+    If a user has flag 3 — their messages are ignored.
     """
 
     async def __call__(
@@ -16,19 +16,11 @@ class BanMiddleware(BaseMiddleware):
             event: TelegramObject,
             data: Dict[str, Any],
     ) -> Any:
-        """
-        :param handler: Оригинальный обработчик (хэндлер), который должен быть вызван.
-        :param event: Событие (сообщение, callback и т.д.).
-        :param data: Дополнительные данные (например, пользователь, бот, FSM и т.д.).
-        :return: Результат работы handler или None (если пользователь забанен).
-        """
 
-        # Получаем пользователя из данных (если он есть)
+        # Get
         user = data.get("event_from_user")
-        # 3 - Флаг, означающий статус пользователя (3 - это бан)
+        # 3 - а flag indicating the user's status (3 means banned)
         if users_db.cache.get(user.id, None) and users_db.cache[user.id] == 3:
-            # Прерываем дальнейшую обработку
             return
-
-        # Если пользователь не забанен — передаём сообщение дальше в хэндлер
+        # If the user isn't banned, forward the message to the handler
         return await handler(event, data)

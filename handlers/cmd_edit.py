@@ -10,7 +10,7 @@ from services.archiving_files import delete_file
 from handlers.notifications import send_notification_all_users
 import datetime
 import asyncio
-from config import FILES_DIR_UPLOAD
+from config import config
 import os
 
 router = Router()
@@ -24,6 +24,7 @@ class EditDump(StatesGroup):
     waiting_for_description = State()  # FSM for description
     waiting_for_mediafiles = State()  # FSM  for files
     delete_catalog = State()
+    rename_catalog = State()
 
 
 @router.message(Command("edit"))
@@ -85,8 +86,10 @@ async def handle_cmd_save_4_editdump(message: Message, state: FSMContext):
     file_names_lst = data.get("file_names_lst", [])
 
     # Before saving need to check whether the files have been completely downloaded to your local disk
-    if not all(map(lambda x: x in os.listdir(FILES_DIR_UPLOAD), file_names_lst)):
-        await message.answer(text='The files were not fully downloaded to disk. Please wait a few seconds and send /save')
+    if not all(map(lambda x: x in os.listdir(config.FILES_DIR_UPLOAD), file_names_lst)):
+        await message.answer(
+            text='The files were not fully downloaded to disk. Please wait a few seconds and send /save'
+        )
         return
 
     # Iterating through the array and writing items to the database
@@ -95,6 +98,7 @@ async def handle_cmd_save_4_editdump(message: Message, state: FSMContext):
 
     await message.answer(msg_done, reply_markup=ReplyKeyboardRemove())
     await state.clear()
+
     # Updating a datetime cell value in the database
     datetime_record = datetime.datetime.now().replace(microsecond=0)
     await catalogs_db.update_datetime_by_id(id_=dump_id, datetime=datetime_record)
@@ -114,9 +118,23 @@ async def delete_catalog(message: Message, state: FSMContext):
     dump_id = data.get("dump_id", None)
     await catalogs_db.delete_row_by_id(dump_id)
     files_array = await files_db.select_rows_by_id(dump_id)
-    tasks = [delete_file(os.path.join(FILES_DIR_UPLOAD, filename)) for filename in [i['file_name'] for i in files_array]]
+    tasks = [
+        delete_file(os.path.join(config.FILES_DIR_UPLOAD, filename))
+        for filename in [i['file_name'] for i in files_array]
+             ]
     await asyncio.gather(*tasks)
 
     await files_db.delete_rows_by_catalog_id(dump_id)
     await message.answer(msg_done, reply_markup=ReplyKeyboardRemove())
+    await state.clear()
+
+
+@router.message(EditDump.rename_catalog)
+async def rename_catalog(message: Message, state: FSMContext):
+    """Handler for rename title of category"""
+    data = await state.get_data()
+    dump_id = data.get("dump_id", None)
+    new_name = message.text
+    await catalogs_db.update_name_by_id(dump_id, new_name)
+    await message.answer(msg_done)
     await state.clear()

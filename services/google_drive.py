@@ -1,49 +1,38 @@
+import os
 import mimetypes
-import asyncio
-from concurrent.futures import ThreadPoolExecutor
+from config import config
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
+from google.auth.transport.requests import Request, AuthorizedSession
 from googleapiclient.discovery import build
-from googleapiclient.http import MediaFileUpload
-from google.auth.transport.requests import Request
-from config import config
-from googleapiclient.http import MediaIoBaseDownload
+from googleapiclient.http import MediaIoBaseUpload, MediaIoBaseDownload
 import io
-import os
+import asyncio
 
 
+# pip install --upgrade google-api-python-client google-auth google-auth-oauthlib requests
 class GoogleDriveUploader:
-    """
-    Класс для загрузки файлов на Google Drive.
-    Хранит авторизацию и целевую папку загрузки (folder_id).
-    """
-
     SCOPES = ['https://www.googleapis.com/auth/drive.file']
 
-    def __init__(
-        self,
-        folder_id: str = None,
-        credentials_path: str = 'client_secret_google.json',
-        token_path: str = 'token.json'
-    ):
-        """
-        Инициализация:
-        - folder_id: ID целевой папки на Google Drive.
-        - credentials_path: путь к client_secret JSON.
-        - token_path: путь к файлу с сохранённым токеном.
-        """
+    def __init__(self, folder_id: str = None, credentials_path: str = config.GOOGLE_CREDENTIALS_FILE,
+                 token_path: str = 'token.json'):
+
         self.folder_id = folder_id
         self.credentials_path = credentials_path
         self.token_path = token_path
         self.creds = self._authenticate()
-        self.service = build('drive', 'v3', credentials=self.creds)
+        self.session = AuthorizedSession(self.creds)
+        self.service = build(
+            'drive', 'v3',
+            credentials=self.creds
+        )
+
+    def _request_builder(self, *args, **kwargs):
+        from googleapiclient.http import HttpRequest
+        return HttpRequest(self.session, *args, **kwargs)
 
     def _authenticate(self):
-        """
-        Авторизация по OAuth2. Сохраняет/обновляет токен.
-        """
         creds = None
-
         if os.path.exists(self.token_path):
             creds = Credentials.from_authorized_user_file(self.token_path, self.SCOPES)
 
@@ -59,59 +48,48 @@ class GoogleDriveUploader:
 
         return creds
 
-    def _upload_file_sync(self, file_path: str):
-        """
-        Синхронная загрузка одного файла в папку self.folder_id.
-        Используется из пула потоков.
-        """
+    def _upload_file_sync(self, file_path: str, folder_enable: bool = True):
+        # arg: folder_enable is flag. True - file save to a specific Google Drive folder
+        # False -  back to Drive root if unspecified
+
         file_name = os.path.basename(file_path)
         mime_type = mimetypes.guess_type(file_path)[0] or 'application/octet-stream'
 
-        file_metadata = {
-            'name': file_name,
-        }
-        if self.folder_id:
-            file_metadata['parents'] = [self.folder_id]  # Используем папку по умолчанию
+        file_metadata = {'name': file_name}
+        if self.folder_id and folder_enable:
+            file_metadata['parents'] = [self.folder_id]
 
-        media = MediaFileUpload(file_path, mimetype=mime_type)
+        chunk_size = 10 * 1024 * 1024  # 10MB
+        with open(file_path, 'rb') as f:
+            media = MediaIoBaseUpload(f, mimetype=mime_type, chunksize=chunk_size, resumable=True)
+            request = self.service.files().create(
+                body=file_metadata,
+                media_body=media,
+                fields='id'
+            )
 
-        file = self.service.files().create(
-            body=file_metadata,
-            media_body=media,
-            fields='id'
-        ).execute()
+            response = None
+            while response is None:
+                status, response = request.next_chunk()
+                if status:
+                    print(f"Upload progress: {int(status.progress() * 100)}%")
 
-        return file.get("id")
+        return response.get("id")
 
-    async def upload_files(self, file_paths: list[str]):
+    async def upload_files(self, file_paths: list[str], folder_enable=True):
         """
-        Асинхронная загрузка всех файлов в self.folder_id с таймаутом и ограничением потоков.
+        Обертка для загрузски списка файлов. Тут можно было реализовать параллельную вгрузку через asyncio.gather
+        Однако google client выёбывается время от времени и руинит код. Именно поэтому загружаем последовательно
+        в выделенном потоке
         """
-        max_workers: int = 4
-        timeout: int = 3000
-        loop = asyncio.get_event_loop()
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:  # Ограничиваем потоки
-            tasks = []
-            for path in file_paths:
-                # Добавляем таймаут для каждой задачи
-                task = asyncio.wait_for(
-                    loop.run_in_executor(executor, self._upload_file_sync, path),
-                    timeout=timeout
-                )
-                tasks.append(task)
-
-            try:
-                uploaded_ids = await asyncio.gather(*tasks, return_exceptions=True)
-                # Фильтруем успешные загрузки
-                return [id_ for id_ in uploaded_ids if not isinstance(id_, Exception)]
-            except Exception as e:
-                print(f"Upload failed: {e}")
-                return []
+        for file_path in file_paths:
+            await asyncio.to_thread(self._upload_file_sync, file_path, folder_enable)
 
     def _get_list_files_sync(self) -> list[dict]:
         """
-        Синхронно возвращает список всех файлов на Google Диске с их именами и ID.
+        Return a list of all files on Google Drive with their names and IDs
         """
+
         files = []
         page_token = None
 

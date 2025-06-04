@@ -1,25 +1,25 @@
-from services.archiving_files import archiving_files_main
-from services.google_drive import google_drive, google_drive_db
 import asyncio
 import os
+from services.archiving_files import archiver, delete_file
+from services.google_drive import google_drive, google_drive_db
 from config import config
 from datetime import datetime
 from services.google_drive import GoogleDriveUploader
-from services.archiving_files import extract_zip_from_memory, delete_file
 
 
 async def backup_to_gdrive():
 
     # Create archives
-    result_dict = await archiving_files_main()  # -> {'zip_file_list': [], 'files_list':[] or None
+    result_dict = await archiver.archiving_files_processor()  # -> {'zip_file_list': [], 'files_list':[] or None
     if not result_dict:
         return
-
-
+    if not config.backup_files_on_google_drive:
+        return
 
     # Upload archives to Google Drive
-    await google_drive.upload_files(result_dict['zip_file_list'])
-    await google_drive_db.upload_files(['data.db'])
+    if result_dict['zip_file_list']:
+        await google_drive.upload_files(result_dict['zip_file_list'])
+        await google_drive_db.upload_files(['data.db'])
 
     # Deleting remaining files (media)
     if result_dict.get('files_list', None):
@@ -51,9 +51,11 @@ def sync_get_archives_extract_files(catalog_id):
     archives_list = google_drive__.get_dump_archives(catalog_id)
 
     for archive_item in archives_list:
-        archive_data = extract_zip_from_memory(archive_item[1], "kal_i-mocha")
+        archive_data = archiver.extract_zip_from_memory(archive_item[1], config.PASSPHRASE)
         mediafile_list.extend(archive_data)
 
     return mediafile_list
 
+##
+files = [os.path.join('files_upload', i) for i in ['10_asipavichy-2025-d-r-lva-1748641823.zip', '11_ontoshin-den-2025-1748814615.zip']]
 

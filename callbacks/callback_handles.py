@@ -3,7 +3,8 @@ from handlers.cmd_show import PaginationState
 from keyboards.catalog_kb import build_dumps_keyboard_with_pagination
 import keyboards.keyboards as kb
 from services.database import catalogs_db, files_db
-from text.messages import msg_handle_item_selection, msg_process_description, msgs_process_title, msg_del_dump_confirm
+from text.messages import msg_handle_item_selection, msg_process_description, \
+    msgs_process_title, msg_del_dump_confirm, msg_rename_dump
 from handlers.cmd_edit import EditDump
 from aiogram.fsm.context import FSMContext
 from aiogram.exceptions import TelegramBadRequest
@@ -84,8 +85,12 @@ async def handle_show_dump(callback: types.CallbackQuery):
             if document_files_list:
                 await handle_send_document_type_files(callback, document_files_list)
         except TelegramBadRequest as _ex:
-
-            if 'file identifier' in str(_ex):
+            """
+            If the Telegram API raises an exception containing <file identifier> in its text, this indicates 
+            that the Telegram servers could not find files corresponding to the provided file_id. 
+            In this case, we proceed to the logic of loading files from the archive (via a flag).
+            """
+            if 'file identifier' in str(_ex): #
                 flag = True
                 break
             else:
@@ -201,4 +206,17 @@ async def handle_delete_category(callback: types.CallbackQuery, state: FSMContex
     await callback.message.answer(text=msg_del_dump_confirm,
                                   parse_mode="HTML",
                                   reply_markup=await kb.save_cancel_kb()
+                                  )
+
+
+@router.callback_query(F.data.startswith("rename_dump"))
+async def handle_rename_category(callback: types.CallbackQuery, state: FSMContext):
+    """Rename title of category"""
+
+    dump_id = callback.data.split(":")[1]
+    await state.set_state(EditDump.rename_catalog)
+    await state.update_data(dump_id=dump_id)
+    await callback.answer()
+    await callback.message.answer(text=msg_rename_dump,
+                                  parse_mode="HTML",
                                   )

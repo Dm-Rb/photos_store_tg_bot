@@ -10,7 +10,7 @@ router = Router()
 
 @router.message(Command('stop'))
 async def cmd_stop(messages: Message):
-    """Delete user_id from data base"""
+    """Delete user_id from data base and cashe"""
 
     user_id = messages.from_user.id
     if not users_db.cache.get(user_id, None):

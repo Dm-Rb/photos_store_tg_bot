@@ -65,14 +65,19 @@ msg_cmd_stop = "Дадзеныя аб вышым акаунце выдалены
 msg_done = 'Зроблена ✅'
 
 msg_edit_keyboard = {
-    'add_description': "➕ Дадаць новы каментар",
-    'add_files': '➕ Дадаць файлы',
-    'del_dump': '➖ Выдалiць каталог'
+    'add_description': "💬 Дадаць новы каментар",
+    'add_files': '📤 Дадаць файлы',
+    'rename_dump': '📂 Змянiць iмя каталога',
+    'del_dump': '🗑 Выдалiць каталог',
 }
+
 
 msg_del_dump_confirm = "<b>Вы упэўнены, што хаціце выдаліць гэты каталог з усімі фотаздымкамі?\n</b>" +\
                        "Так, выдаліць - /save\n" +\
                        "Не, адменіць - /cancel"
+msg_rename_dump = "<b>👇 Адпраўце боту новае імя каталога</b>\n" + \
+                  "❌ адменіць - /cancel"
+
 
 def msg_handle_item_selection(title, description):
     message = ""
@@ -81,6 +86,7 @@ def msg_handle_item_selection(title, description):
     for description in descriptions:
         message += "<blockquote>" + description.strip() + "</blockquote>" + "\n"
     return message
+
 
 def msg_notification(title, type_):
     if type_ == "edit":

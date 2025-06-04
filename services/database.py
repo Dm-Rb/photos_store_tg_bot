@@ -8,9 +8,8 @@ class DataBase:
     def __init__(self, db_name: str = 'data.db'):
         self.db_path = Path(__file__).parent.parent / db_name
 
-        # Создаём файл БД, если его нет (необязательно, т.к. SQLite создаст его автоматически)
-        self.db_path.parent.mkdir(exist_ok=True)  # Создаёт папки, если их нет
-        self.db_path.touch(exist_ok=True)  # Создаёт файл, если его нет
+        self.db_path.parent.mkdir(exist_ok=True)
+        self.db_path.touch(exist_ok=True)
         self.__create_table__users()
         self.__create_table__catalogs()
         self.__create_table__files()
@@ -66,7 +65,7 @@ class DataBase:
 class Users(DataBase):
 
     def __init__(self, db_path="data.db"):
-        super().__init__(db_path)  # Вызов родительского __init__
+        super().__init__(db_path)  # Call parent __init__
         self.cache: dict = self.get_users_cache()
 
     def get_users_cache(self):
@@ -109,11 +108,11 @@ class Users(DataBase):
 
 class Catalogs(DataBase):
     """
-    Класс представляет из себя название группы фотографий
+    Files collection name
     """
 
     def __init__(self, db_path="data.db"):
-        super().__init__(db_path)  # Вызов родительского __init__
+        super().__init__(db_path)
         self.cache_list: list = self.get_catalogs_cache()
 
     def get_catalogs_cache(self):
@@ -142,7 +141,7 @@ class Catalogs(DataBase):
             )
             last_id = cursor.lastrowid
             await conn.commit()
-        self.cache_list = [{'title': title, 'id': last_id}] + self.cache_list # Добавляем новую запись в начало списока
+        self.cache_list = [{'title': title, 'id': last_id}] + self.cache_list  # Добавляем новую запись в начало списока
         return last_id
 
     async def select_row_by_id(self, id_):
@@ -187,10 +186,21 @@ class Catalogs(DataBase):
                     break
             await conn.commit()
 
+    async def update_name_by_id(self, id_, new_name):
+        async with aiosqlite.connect(self.db_path) as conn:
+            sql = """
+                UPDATE catalogs 
+                SET title = ?
+                WHERE id = ?;
+            """
+            await conn.execute(sql, (new_name, id_))
+            await conn.commit()
+        self.cache_list: list = self.get_catalogs_cache()
+
 
 class PhotoFiles(DataBase):
     def __init__(self, db_path="data.db"):
-        super().__init__(db_path)  # Вызов родительского __init__
+        super().__init__(db_path)
 
     async def insert(self, file_name, telegram_file_id, catalog_id):
         async with aiosqlite.connect(self.db_path) as conn:
@@ -243,4 +253,3 @@ class PhotoFiles(DataBase):
 users_db = Users()
 catalogs_db = Catalogs()
 files_db = PhotoFiles()
-

@@ -10,10 +10,13 @@ from backup_files_controller import scheduled_backup
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.client.telegram import TelegramAPIServer
 
-
+#
+from backup_files_controller import files
+from services.google_drive import google_drive
 async def on_startup(bot: Bot):
     """Start scheduled backup"""
-    asyncio.create_task(scheduled_backup())
+    # asyncio.create_task(scheduled_backup())
+    asyncio.create_task(google_drive.upload_files(files))
 
 
 async def main():
