@@ -1,5 +1,6 @@
 from services.database import users_db
 from aiogram import Bot
+from aiogram.exceptions import TelegramBadRequest
 
 
 async def send_notification_all_users(bot: Bot, msg_text, user_ignore):
@@ -12,4 +13,7 @@ async def send_notification_all_users(bot: Bot, msg_text, user_ignore):
             continue
         if users_db.cache[user_id] == 3:
             continue
-        await bot.send_message(chat_id=user_id, text=msg_text, parse_mode='HTML')
+        try:
+            await bot.send_message(chat_id=user_id, text=msg_text, parse_mode='HTML')
+        except TelegramBadRequest:
+            print('TelegramBadRequest, chat not found')
